@@ -429,7 +429,7 @@ struct VCOMHWidget : ModuleWidget {
 
 		menu->addChild(createIndexSubmenuItem("Tuning",
 			{
-				"12-TET", 
+				"Original Hammond (12-TET)", 
 				"Pythagorean",
 				"1/4-comma Meantone", 
 				"1/3-comma Meantone", 

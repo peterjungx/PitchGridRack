@@ -7,6 +7,7 @@ void init(Plugin* p) {
 	pluginInstance = p;
 
 	p->addModel(modelMicroHammond);
+	p->addModel(modelMicroVOctMapper);
 
 }
 

@@ -6,20 +6,31 @@
   "brand": "PitchGrid",
   "author": "Peter Jung",
   "authorEmail": "peterjungx@gmail.com",
-  "pluginUrl": "",
+  "pluginUrl": "https://github.com/peterjungx/PitchGridRack",
   "authorUrl": "",
-  "manualUrl": "",
-  "sourceUrl": "",
+  "manualUrl": "https://github.com/peterjungx/PitchGridRack",
+  "sourceUrl": "https://github.com/peterjungx/PitchGridRack",
   "changelogUrl": "",
   "minRackVersion": "2.4.0",
   "modules": [ 
     {
       "slug": "MicroHammond",
-      "name": "MicroHammond",
+      "name": "Microtonal Hammond",
       "description": "Microtonally adjusted Hammond frequencies",
-      "manualUrl": "",
+      "manualUrl": "https://github.com/peterjungx/PitchGridRack",
       "tags": [
         "VCO",
+        "Microtonal",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "MicroVOctMapper",
+      "name": "Microtonal V/OCT Mapper",
+      "description": "Microtonally map V/OCT to MV/OCT",
+      "manualUrl": "https://github.com/peterjungx/PitchGridRack",
+      "tags": [
+        "Microtonal",
         "Polyphonic"
       ]
     }
