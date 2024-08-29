@@ -64,7 +64,9 @@ struct VOctMapper : Module {
 		TUNING_QUARTERCOMMA_MEANTONE = 2,
 		TUNING_THIRDCOMMA_MEANTONE = 3,
 		TUNING_5LIMIT_CLEANTONE = 4,
-		TUNING_7LIMIT_CLEANTONE = 5
+		TUNING_7LIMIT_CLEANTONE = 5,
+		TUNING_19TET = 6,
+		TUNING_31TET = 7,
 	};
 
 	enum class BlackKeyMapPresets : int {
@@ -126,7 +128,7 @@ struct VOctMapper : Module {
 
 		switch (tuningPreset) {
 			case TuningPresets::TUNING_12TET:
-				tuning.setParams(2, 5, 2.f, 1, 3, pow(2.f, 7.f/12.f));
+				tuning.setParams(2, 5, 2.f, 1, 0, pow(2.f, 1.f/12.f));
 				break;
 			case TuningPresets::TUNING_PYTHAGOREAN:
 				tuning.setParams(2, 5, 2.f, 1, 3, 3.f/2.f);
@@ -142,6 +144,12 @@ struct VOctMapper : Module {
 				break;
 			case TuningPresets::TUNING_7LIMIT_CLEANTONE:
 				tuning.setParams(1, 1, 7.f/6.f, 1, 3, 3.f/2.f);
+				break;
+			case TuningPresets::TUNING_19TET:
+				tuning.setParams(2, 5, 2.f, 1, 0, pow(2.f, 2.f/19.f));
+				break;
+			case TuningPresets::TUNING_31TET:
+				tuning.setParams(2, 5, 2.f, 1, 0, pow(2.f, 3.f/31.f));
 				break;
 		}
 
@@ -170,7 +178,12 @@ struct VOctMapper : Module {
 			// - 5 octaves
 			a -= 10;
 			b -= 25;
-			
+
+			float_4 voltage;
+			for (int i = 0; i < 4; i++){
+			 	voltage[i] = tuning.vecToVoltage(a[i], b[i]);
+			}
+
 			// Set output
 			if (outputs[MVOCT_OUTPUT].isConnected()){
 				outputs[MVOCT_OUTPUT].setVoltageSimd(voltage, c);
@@ -230,7 +243,9 @@ struct VOctMapperWidget : ModuleWidget {
 				"1/4-comma Meantone", 
 				"1/3-comma Meantone", 
 				"5-limit (Cleantone)", 
-				"7-limit (m3=7/6 P5=3/2)"
+				"7-limit (m3=7/6 P5=3/2)",
+				"19-TET",
+				"31-TET"
 			},
 			[=]() {
 				return module->getTuningPreset();
