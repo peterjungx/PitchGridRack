@@ -211,8 +211,85 @@ struct VOctTuningDisplay: TuningDisplay {
 				module->tuningPreset == VOctMapper::TuningPresets::TUNING_19TET ? "19-TET" :
 				module->tuningPreset == VOctMapper::TuningPresets::TUNING_31TET ? "31-TET" : "Unknown";
 		}
-		
 	};
+};
+
+struct VOctMapperKeyboardDisplay : Widget {
+	std::string fontPath;
+	std::string text[12] = { "C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B" };
+	float fontSize;
+	NVGcolor whiteKeyFontColor = SCHEME_BLACK;
+	NVGcolor blackKeyFontColor = SCHEME_YELLOW;
+	Vec textPos[12];
+
+	VOctMapper* module;
+
+	VOctMapperKeyboardDisplay() {
+		fontPath = asset::plugin(pluginInstance, "res/fonts/PTSans.ttc");
+		float key_x_offset = 16.8f;
+		float key_x_base = 11.f;
+		textPos[0] = Vec(key_x_base, 20);
+		textPos[1] = Vec(18, 0); //Db
+		textPos[2] = Vec(key_x_base + key_x_offset, 20);
+		textPos[3] = Vec(21 + key_x_offset, 0); //Eb
+		textPos[4] = Vec(key_x_base + 2 * key_x_offset, 20);
+		textPos[5] = Vec(key_x_base + 3 * key_x_offset, 20);
+		textPos[6] = Vec(16 + 3 * key_x_offset, 0); //Gb
+		textPos[7] = Vec(key_x_base + 4 * key_x_offset, 20);
+		textPos[8] = Vec(19 + 4 * key_x_offset, 0); //Ab
+		textPos[9] = Vec(key_x_base + 5 * key_x_offset, 20);
+		textPos[10] = Vec(22 +5 * key_x_offset, 0); //Bb
+		textPos[11] = Vec(key_x_base + 6 * key_x_offset, 20);
+		
+		fontSize = 14;
+	}
+
+	void step() override {
+		if (module) {
+			int r = (int)module->getBlackKeyMapPreset();
+			text[1] = r < 2 ? "Db" : "C#";
+			text[3] = r < 4 ? "Eb" : "D#";
+			text[6] = r < 1 ? "Gb" : "F#";
+			text[8] = r < 3 ? "Ab" : "G#";
+			text[10] = r < 5 ? "Bb" : "A#";
+		}
+	};
+	
+
+	void prepareFont(const DrawArgs& args) {
+		// Get font
+		std::shared_ptr<Font> font = APP->window->loadFont(fontPath);
+		if (!font)
+			return;
+		nvgFontFaceId(args.vg, font->handle);
+		nvgFontSize(args.vg, fontSize);
+		nvgTextLetterSpacing(args.vg, -0.7);
+		nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+	}
+
+	//void draw(const DrawArgs& args) override {
+	//	// Background
+	//	//nvgBeginPath(args.vg);
+	//	//nvgRoundedRect(args.vg, 0, 0, box.size.x, box.size.y, 2);
+	//	//nvgFillColor(args.vg, nvgRGB(0x19, 0x19, 0x19));
+	//	//nvgFill(args.vg);
+	//
+	//	//prepareFont(args);
+	//}
+
+	void drawLayer(const DrawArgs& args, int layer) override {
+		if (layer == 1) {
+			prepareFont(args);
+
+			// Foreground text
+			//nvgFillColor(args.vg, fgColor);
+			for (int i = 0; i < 12; i++){
+				nvgFillColor(args.vg, i == 1 || i == 3|| i == 6|| i == 8|| i == 10 ? blackKeyFontColor : whiteKeyFontColor);
+				nvgText(args.vg, textPos[i].x, textPos[i].y, text[i].c_str(), NULL);
+			}
+		}
+		Widget::drawLayer(args, layer);
+	}
 };
 
 
@@ -234,6 +311,11 @@ struct VOctMapperWidget : ModuleWidget {
 		display->box.size = mm2px(Vec(42, 7));
 		display->module = module;
 		addChild(display);
+
+		VOctMapperKeyboardDisplay* keyboardDisplay = createWidget<VOctMapperKeyboardDisplay>(mm2px(Vec(2.0, 27.0)));
+		keyboardDisplay->box.size = mm2px(Vec(42, 7));
+		keyboardDisplay->module = module;
+		addChild(keyboardDisplay);
 
 	}
 
