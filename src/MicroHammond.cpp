@@ -393,6 +393,18 @@ struct VCOMH : Module {
 			lights[SOFT_LIGHT].setBrightness(soft);
 		}
 	}
+
+	json_t* dataToJson() override {
+		json_t* rootJ = json_object();
+		json_object_set_new(rootJ, "tuningPreset", json_integer((int)tuningPreset));
+		return rootJ;
+	}
+
+	void dataFromJson(json_t* rootJ) override {
+		json_t* tuningPresetJ = json_object_get(rootJ, "tuningPreset");
+		if (tuningPresetJ)
+			tuningPreset = (TuningPresets)json_integer_value(tuningPresetJ);
+	}
 };
 
 

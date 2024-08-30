@@ -195,6 +195,24 @@ struct VOctMapper : Module {
 		outputs[MVOCT_OUTPUT].setChannels(channels);
 
 	}
+
+
+	json_t* dataToJson() override {
+		json_t* rootJ = json_object();
+		json_object_set_new(rootJ, "blackKeyMapPreset", json_integer((int)blackKeyMapPreset));
+		json_object_set_new(rootJ, "tuningPreset", json_integer((int)tuningPreset));
+		return rootJ;
+	}
+
+	void dataFromJson(json_t* rootJ) override {
+		json_t* blackKeyMapPresetJ = json_object_get(rootJ, "blackKeyMapPreset");
+		if (blackKeyMapPresetJ)
+			blackKeyMapPreset = (BlackKeyMapPresets)json_integer_value(blackKeyMapPresetJ);
+		json_t* tuningPresetJ = json_object_get(rootJ, "tuningPreset");
+		if (tuningPresetJ)
+			tuningPreset = (TuningPresets)json_integer_value(tuningPresetJ);
+	}
+
 };
 
 struct VOctTuningDisplay: TuningDisplay {
