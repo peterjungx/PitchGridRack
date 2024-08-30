@@ -396,6 +396,23 @@ struct VCOMH : Module {
 };
 
 
+struct MHTuningDisplay: TuningDisplay {
+	VCOMH* module;
+	void step() override {
+		text = "12-TET";
+		if(module){
+			text = module->tuningPreset == VCOMH::TuningPresets::TUNING_12TET ? "12-TET" :
+				module->tuningPreset == VCOMH::TuningPresets::TUNING_PYTHAGOREAN ? "Pythagorean" :
+				module->tuningPreset == VCOMH::TuningPresets::TUNING_QUARTERCOMMA_MEANTONE ? "1/4-comma Meantone" :
+				module->tuningPreset == VCOMH::TuningPresets::TUNING_THIRDCOMMA_MEANTONE ? "1/3-comma Meantone" :
+				module->tuningPreset == VCOMH::TuningPresets::TUNING_5LIMIT_CLEANTONE ? "5-limit (Cleantone)" :
+				module->tuningPreset == VCOMH::TuningPresets::TUNING_7LIMIT_CLEANTONE ? "7-limit (m3=7/6 P5=3/2)" :
+				module->tuningPreset == VCOMH::TuningPresets::TUNING_19TET ? "19-TET" :
+				module->tuningPreset == VCOMH::TuningPresets::TUNING_31TET ? "31-TET" : "Unknown";
+		}
+	};
+};
+
 struct VCOMHWidget : ModuleWidget {
 	VCOMHWidget(VCOMH* module) {
 		setModule(module);
@@ -427,6 +444,12 @@ struct VCOMHWidget : ModuleWidget {
 		addOutput(createOutputCentered<ThemedPJ301MPort>(mm2px(Vec(39.15, 113.115)), module, VCOMH::SIN_OUTPUT));
 
 		addChild(createLightCentered<SmallLight<RedGreenBlueLight>>(mm2px(Vec(31.089, 16.428)), module, VCOMH::PHASE_LIGHT));
+
+
+		MHTuningDisplay* display = createWidget<MHTuningDisplay>(mm2px(Vec(2.0, 78.0)));
+		display->box.size = mm2px(Vec(42, 7));
+		display->module = module;
+		addChild(display);
 	}
 
 	void appendContextMenu(Menu* menu) override {

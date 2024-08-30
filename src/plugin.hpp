@@ -25,8 +25,8 @@ struct DigitalDisplay : Widget {
 			return;
 		nvgFontFaceId(args.vg, font->handle);
 		nvgFontSize(args.vg, fontSize);
-		nvgTextLetterSpacing(args.vg, 0.0);
-		nvgTextAlign(args.vg, NVG_ALIGN_RIGHT);
+		nvgTextLetterSpacing(args.vg, -0.7);
+		nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
 	}
 
 	void draw(const DrawArgs& args) override {
@@ -56,14 +56,15 @@ struct DigitalDisplay : Widget {
 };
 
 
-struct ChannelDisplay : DigitalDisplay {
-	ChannelDisplay() {
-		fontPath = asset::system("res/fonts/DSEG7ClassicMini-BoldItalic.ttf");
-		textPos = Vec(22, 20);
+struct TuningDisplay : DigitalDisplay {
+	TuningDisplay() {
+		fontPath = asset::plugin(pluginInstance, "res/fonts/PTSans.ttc");
+		textPos = Vec(62, 10);
 		bgText = "18";
-		fontSize = 16;
+		fontSize = 14;
 	}
 };
+
 
 
 template <typename TBase = GrayModuleLightWidget>
