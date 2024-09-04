@@ -1,8 +1,16 @@
 # PitchGrid Modules for VCV Rack
 
-The tonal structure of Western music is two-dimensional, and is induced by the two different tone sizes and the desire to change keys. All notes are located on a 2-d lattice that I call the PitchGrid. On the PitchGrid, all equal temperaments (12-TET, 19-TET, 31-TET, etc.) and historically relevant regular temperaments (notably Pythagorean tuning and all Meantone temperaments) can be reproduced by a simple tilt of the axis of constant pitch. Non-conventional regular temperaments like the 5-limit tuning, which lift the assumption *octave equals 2/1 frequency ratio*, are also readily available. I am dedicated to the exploration of the implications of this realization. Visit the [PitchGrid Web App](https://pitchgrid.io) to get a taste. 
+## What is this? (TL;DR)
 
-To make my theoretical explorations audible and playable for the practicing musician, I am here releasing some VCV Rack modules that implement some of the ideas.
+Okay, so let's assume you are the adventurous kind of musician who wants to know what lies beyond the standard tuning, maybe because you are excited by oriental music. Therefore, you want to go beyond equal temperament and want to try out, say, 1/4-comma Meantone (an important temperament in medeival times). And let's assume it was easy to do just that. Chances are you would not be too much satisfied with the result. While there might be multiple reasons as to why this might be so, one issue you definitely will stumble upon is that your instrument's timbre might not fit your new tuning. Tuning and timbre are commonly dealt with completely separately from each other, because it is easier to conceptualize and to work with, especially within your typical DAW. But in reality they are intimately connected. 
+
+At this early stage, the PitchGrid modules aim at making the interaction between tuning and timbre explicitly experienceable. Select your tuning with the **Microtonal V/OCT Mapper** and change the timbre of the **Microtonal Hammond**, (a nine oscillator VCO module featuring the typical overtones of a Hammond organ, but with overtones matching a chosen tuning), and hear the interactions. 
+
+## Intro
+
+The tonal structure of Western music is two-dimensional, and is induced by the two different tone sizes as well as the desire to change keys. All notes are located on a 2-d lattice that I call the PitchGrid. On the PitchGrid, all equal temperaments (12-TET, 19-TET, 31-TET, etc.) and historically relevant regular temperaments (notably Pythagorean tuning and all Meantone temperaments) can be reproduced by a simple tilt of the axis of constant pitch. Non-conventional regular temperaments like the 5-limit tuning, which lift the assumption *octave equals 2/1 frequency ratio*, are also readily available. I am dedicated to the exploration of the implications of this realization. Visit the [PitchGrid Web App](https://pitchgrid.io) to get a taste. 
+
+To make my theoretical explorations audible and playable for the practicing musician, I am here releasing some VCV Rack modules that implement some of the ideas. The goal is both educational and practical. I believe there is a whole unexplored universe lying beyond the twelve semitones per octave idea that we Westerners are raised with. I can't possibly explore that universe on my own. I want to build tools that make it easy for you, the musician, to transgress the boundaries, and to join me on my journey. The first step is to make you see (or rather, hear) that there indeed is the unknown hidden in plain sight. This is what this VCV Rack modules are about today. They eventually will evolve into practical tools, with your valuable feedback. 
 
 ## VCV Rack Modules
 
@@ -30,7 +38,7 @@ In any tuning besides 12-TET, F# and Gb have different pitches. Thus, there is a
   - **Pythagorean** The octave gets assigned the just frequency ratio 2/1 and the perfect fifth the just frequency ratio 3/2. The origin of all Western music. Good tuning to keep the perfect 5th stable.
   - **1/4-comma meantone** The octave gets assigned the frequency ratio 2/1 and the major third 5/4. Good for pieces in major. Historically relevant in medeival music.
   - **1/3-comma meantone** The octave gets assigned the frequency ratio 2/1 and the minor third 6/5. Good for pieces in minor.
-  - **5-limit (1/2-comma Cleantone)** The perfect fifth is 3/2 and the major third is 5/4. Consequently the minor third becomes just, too, at 6/5. All (non-inverted) triads and 7th chords are just(!). Octave is ~10ct wider than just 2/1. Mathematically proven to be the *best sounding temperament for Western music* (according to some measures) in the [Musical Tonality Paper]() by Hans-Peter Deutsch.
+  - **5-limit (1/2-comma Cleantone)** The perfect fifth is 3/2 and the major third is 5/4. Consequently the minor third becomes just, too, at 6/5. All (non-inverted) triads and 7th chords are just(!). Octave is ~10ct wider than just 2/1. Mathematically proven to be the *best sounding temperament for Western music* (according to some measures) in the [Musical Tonality Paper](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4452394) by Hans-Peter Deutsch.
   - **7-limit (P5=3/2 m3=7/6)** Experimental tuning in which all triads are just with 7th-harmonic based just intervals (minor 3rd =7/6 and Major 3rd =9/7). The octave becomes narrower than just 2/1 by about 20ct. Has distinctly Kafkaesque qualities.
 
 
@@ -58,7 +66,7 @@ If this hypothesis is true, the original Hammond timbre can only sound good when
   - **Pythagorean** The octave gets assigned the just frequency ratio 2/1 and the perfect fifth the just frequency ratio 3/2. The origin of all Western music. Good tuning to keep the perfect 5th stable.
   - **1/4-comma meantone** The octave gets assigned the frequency ratio 2/1 and the major third 5/4. Good for pieces in major. Historically relevant in medeival music.
   - **1/3-comma meantone** The octave gets assigned the frequency ratio 2/1 and the minor third 6/5. Good for pieces in minor.
-  - **5-limit (1/2-comma Cleantone)** The perfect fifth is 3/2 and the major third is 5/4. Consequently the minor third becomes just, too, at 6/5. All (non-inverted) triads and 7th chords are just(!). Octave is ~10ct wider than just 2/1. Mathematically proven to be the *best sounding temperament for Western music* (according to some measures) in the [Musical Tonality Paper]() by Hans-Peter Deutsch.
+  - **5-limit (1/2-comma Cleantone)** The perfect fifth is 3/2 and the major third is 5/4. Consequently the minor third becomes just, too, at 6/5. All (non-inverted) triads and 7th chords are just(!). Octave is ~10ct wider than just 2/1. Mathematically proven to be the *best sounding temperament for Western music* (according to some measures) in the [Musical Tonality Paper](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4452394) by Hans-Peter Deutsch.
   - **7-limit (P5=3/2 m3=7/6)** Experimental tuning in which all triads are just with 7th-harmonic based just intervals (minor 3rd =7/6 and Major 3rd =9/7). The octave becomes narrower than just 2/1 by about 20ct. Has distinctly Kafkaesque qualities.
 
 ## Building
