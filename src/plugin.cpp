@@ -8,6 +8,7 @@ void init(Plugin* p) {
 
 	p->addModel(modelMicroHammond);
 	p->addModel(modelMicroVOctMapper);
+	p->addModel(modelMicroExquis);
 
 }
 

@@ -8,6 +8,7 @@ extern Plugin* pluginInstance;
 
 extern Model* modelMicroHammond;
 extern Model* modelMicroVOctMapper;
+extern Model* modelMicroExquis;
 
 struct DigitalDisplay : Widget {
 	std::string fontPath;

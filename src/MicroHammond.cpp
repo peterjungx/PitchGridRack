@@ -1,8 +1,6 @@
 #include "plugin.hpp"
 
-
 using simd::float_4;
-
 
 // Accurate only on [0, 1]
 template <typename T>

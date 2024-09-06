@@ -1,0 +1,445 @@
+#include "pitchgrid.hpp"
+#include "exquis.hpp"
+
+
+
+
+struct ExquisScaleMapper {
+	RegularScale scale = RegularScale({2,5},1);
+	ExquisVector exquis_base = {5,5}, exquis_interval1 = {8,7}, exquis_interval2={7,6};
+	ScaleVector scale_interval1 = {2,5}, scale_interval2 = {1,3};
+	IntegerMatrix transform_e2s;
+	IntegerMatrix transform_s2e;
+
+	IntegerMatrix rot_plus_60;
+	IntegerMatrix rot_minus_60;
+	IntegerMatrix horizontal_flip;
+	IntegerMatrix vertical_flip;
+
+	ExquisScaleMapper(){
+		calcTransforms();
+		rot_plus_60 = findTransform({1,1}, {1,0}, {0,1}, {1,1}); // Exquis Lattice rotation by 60 degrees
+		rot_minus_60 = findTransform({1,0}, {1,1}, {1,1}, {0,1}); // Exquis Lattice rotation by -60 degrees
+		vertical_flip = findTransform({0,1},{0,1},{2,1},{-2,-1});
+		horizontal_flip = findTransform({0,1},{0,-1},{2,1},{2,1});
+	}
+	void calcTransforms(){
+		transform_e2s = findTransform(exquis_interval1 - exquis_base, scale_interval1, exquis_interval2 - exquis_base, scale_interval2);
+		transform_s2e = findTransform(scale_interval1, exquis_interval1 - exquis_base, scale_interval2, exquis_interval2 - exquis_base);
+
+
+	}
+	void setScale(RegularScale scale){
+		this->scale = scale;
+		this->scale_interval1 = scale.scale_class;
+		calcTransforms();
+	}
+	ScaleVector exquis2scale(ExquisVector c){
+		return transform_e2s * c;
+	}
+	ExquisVector scale2exquis(ScaleVector c){
+		return transform_s2e * c;
+	}
+	void shiftX(int amount){
+		exquis_base.x += amount;
+		exquis_interval1.x += amount;
+		exquis_interval2.x += amount;
+	}
+	void shiftY(int amount){
+		exquis_base.y += amount;
+		exquis_interval1.y += amount;
+		exquis_interval2.y += amount;
+	}
+	void skewX(int amount){
+		int x_shift = amount * (exquis_interval1.y - exquis_base.y);
+		exquis_interval1.x += x_shift;
+		
+		x_shift = amount * (exquis_interval2.y - exquis_base.y);
+		exquis_interval2.x += x_shift;
+
+		calcTransforms();
+	}
+	void skewY(int amount){
+		int y_shift = amount * (exquis_interval1.x - exquis_base.x);
+		exquis_interval1.y += y_shift;
+		
+		y_shift = amount * (exquis_interval2.x - exquis_base.x);
+		exquis_interval2.y += y_shift;
+
+		calcTransforms();
+	}
+	void rotatePlus60(){
+		exquis_interval1 = exquis_base + rot_plus_60 * (exquis_interval1 - exquis_base);
+		exquis_interval2 = exquis_base + rot_plus_60 * (exquis_interval2 - exquis_base);
+		calcTransforms();
+	}
+	void rotateMinus60(){
+		exquis_interval1 = exquis_base + rot_minus_60 * (exquis_interval1 - exquis_base);
+		exquis_interval2 = exquis_base + rot_minus_60 * (exquis_interval2 - exquis_base);
+		calcTransforms();
+	}
+	void flipHorizontally(){
+		exquis_interval1 = exquis_base + horizontal_flip * (exquis_interval1 - exquis_base);
+		exquis_interval2 = exquis_base + horizontal_flip * (exquis_interval2 - exquis_base);
+		calcTransforms();
+	}
+	void flipVertically(){
+		exquis_interval1 = exquis_base + vertical_flip * (exquis_interval1 - exquis_base);
+		exquis_interval2 = exquis_base + vertical_flip * (exquis_interval2 - exquis_base);
+		calcTransforms();
+	}
+
+};
+
+ScaleVector ZERO_VECTOR = {0,0};
+
+template <typename T>
+T sin2pi_pade_05_5_4(T x) {
+	x -= 0.5f;
+	return (T(-6.283185307) * x + T(33.19863968) * simd::pow(x, 3) - T(32.44191367) * simd::pow(x, 5))
+	       / (1 + T(1.296008659) * simd::pow(x, 2) + T(0.7028072946) * simd::pow(x, 4));
+}
+
+
+float posfmod(float x, float y){
+	return fmod(x+100*y, y);
+}
+
+struct PitchGridExquis: Exquis {
+
+	bool tuningModeOn = false;
+	bool arrangeModeOn = false;
+	bool scaleSelectModeOn = false;
+
+
+	ExquisVector tuningModeBaseNode = {0,2};
+	ScaleVector tuningModeTuneInterval = {0,0};
+	ScaleVector lastTuningModeTuneInterval = {0,0};
+	ExquisScaleMapper scaleMapper;
+	ConsistentTuning* tuning;
+
+	enum ColorScheme {
+		COLORSCHEME_SCALE_MONOCHROME = 0,
+		COLORSCHEME_SCALE_COLOR_CIRCLE = 1,
+		COLORSCHEME_PITCH_MONOCHROME = 2,
+		COLORSCHEME_PITCH_COLOR_CIRCLE = 3
+	};
+	ColorScheme colorScheme = COLORSCHEME_SCALE_MONOCHROME;
+
+	//ConsistentTuning tuning;
+
+	PitchGridExquis(){
+		Exquis();
+		scaleMapper = ExquisScaleMapper();
+		scaleMapper.scale.mode=5;
+		showAllOctavesLayer();
+	}
+
+	void showAllOctavesLayer(){
+		//INFO("transform_e2s %d %d %d %d", scaleMapper.transform_e2s.m11, scaleMapper.transform_e2s.m12, scaleMapper.transform_e2s.m21, scaleMapper.transform_e2s.m22);
+		//INFO("transform_s2e %d %d %d %d", scaleMapper.transform_s2e.m11, scaleMapper.transform_s2e.m12, scaleMapper.transform_s2e.m21, scaleMapper.transform_s2e.m22);
+
+		for (ExquisNote& note : notes){
+			note.scaleCoord = scaleMapper.exquis2scale(note.coord - scaleMapper.exquis_base);
+			note.scaleSeqNr = scaleMapper.scale.coordToScaleNoteSeqNr(note.scaleCoord);
+
+			//r = r - floor(r);
+			float r;
+			switch(colorScheme){
+				case COLORSCHEME_SCALE_MONOCHROME:
+					if (note.scaleSeqNr != -1){
+						note.color = note.scaleSeqNr == 0 ? XQ_COLOR_WHITE : XQ_COLOR_MAGENTA;
+						r = note.scaleCoord * scaleMapper.scale.scale_class;
+						r /= scaleMapper.scale.scale_class * scaleMapper.scale.scale_class;
+						r = posfmod(r+.001f, 1.f);
+						note.brightness = note.scaleSeqNr == -1? 0.f : pow(8.f, - r);
+						if (note.scaleSeqNr == 0 && note.scaleCoord != ZERO_VECTOR){
+							note.brightness = .5f;
+						}
+					}else{
+						note.color = XQ_COLOR_BLACK;
+						note.brightness = 0.f;
+					}
+					//note.color = note.scaleSeqNr == 0 ? XQ_COLOR_WHITE : XQ_COLOR_MAGENTA;
+					//r = note.scaleCoord * scaleMapper.scale.scale_class;
+					//r /= scaleMapper.scale.scale_class * scaleMapper.scale.scale_class;
+					//r = posfmod(r+.25f, 1.f) * scaleMapper.scale.n;
+					//note.brightness = note.scaleSeqNr == -1? 0.f : pow(8.f, - posfmod(r, 1.f));;
+					break;
+
+				case COLORSCHEME_SCALE_COLOR_CIRCLE:
+					if (note.scaleSeqNr != -1){
+						note.brightness = 1.f;
+						r = note.scaleCoord * scaleMapper.scale.scale_class;
+						r /= scaleMapper.scale.scale_class * scaleMapper.scale.scale_class;
+						note.color = {
+							(uint8_t)(63+63*sin2pi_pade_05_5_4(posfmod(r+.25f, 1.f))),
+							(uint8_t)(32+32*sin2pi_pade_05_5_4(posfmod(r+.5f, 1.f))),
+							(uint8_t)(63+63*sin2pi_pade_05_5_4(posfmod(r+.75f, 1.f)))
+						};
+					}else{
+						note.color = XQ_COLOR_BLACK;
+						note.brightness = 0.f;
+					}
+
+					//r = note.scaleCoord * scaleMapper.scale.scale_class;
+					//r /= scaleMapper.scale.scale_class * scaleMapper.scale.scale_class;
+					//note.color = {
+					//	(uint8_t)(63+63*sin2pi_pade_05_5_4(posfmod(r+.25f, 1.f))),
+					//	(uint8_t)(32+32*sin2pi_pade_05_5_4(posfmod(r+.5f, 1.f))),
+					//	(uint8_t)(63+63*sin2pi_pade_05_5_4(posfmod(r+.75f, 1.f)))
+					//};
+					//note.brightness = note.scaleSeqNr == -1? 0.f : 1.f;
+					break;
+				case COLORSCHEME_PITCH_MONOCHROME:
+
+					note.color = note.scaleSeqNr == 0 ? XQ_COLOR_WHITE : XQ_COLOR_MAGENTA;
+					if (note.scaleSeqNr != -1){
+						r = tuning->vecToVoltage(note.scaleCoord);
+						note.brightness = pow(8.f, - posfmod(r+.001f, 1.f));
+					}else{
+						note.brightness = 0.f;
+					}
+					break;
+				case COLORSCHEME_PITCH_COLOR_CIRCLE:
+					if (note.scaleSeqNr != -1){
+						note.brightness = 1.f;
+						r = tuning->vecToVoltage(note.scaleCoord);
+						note.color = {
+							(uint8_t)(63+63*sin2pi_pade_05_5_4(posfmod(r+.25f, 1.f))),
+							(uint8_t)(32+32*sin2pi_pade_05_5_4(posfmod(r+.25f+.333f, 1.f))),
+							(uint8_t)(63+63*sin2pi_pade_05_5_4(posfmod(r+.25f+.667f, 1.f)))
+						};
+					}else{
+						note.color = XQ_COLOR_BLACK;
+						note.brightness = 0.f;
+					}
+					break;
+				
+			}
+
+
+
+			INFO("noteId: %d, coord: %d %d, scaleCoord: %d %d, scaleSeqNr: %d, brightness: %f color: %d %d %d", note.noteId, note.coord.x, note.coord.y, note.scaleCoord.x, note.scaleCoord.y, note.scaleSeqNr, note.brightness, note.color.r, note.color.g, note.color.b);
+		}
+		needsNoteDisplayUpdate = true;
+	}	
+
+
+	void showMainLayer(){
+		showAllOctavesLayer();
+	}
+
+	void showSingleOctaveLayer(){
+		showAllOctavesLayer();
+		for (ExquisNote& note : notes){
+			if (note.scaleCoord.x < 0 || note.scaleCoord.y < 0 || note.scaleCoord.x > scaleMapper.scale.scale_class.x || note.scaleCoord.y > scaleMapper.scale.scale_class.y){
+				note.color = XQ_COLOR_BLACK;
+				note.brightness = 0.f;
+			}
+		}
+		needsNoteDisplayUpdate=true;
+	}
+
+	void showScaleClassSelectLayer(){
+		for (ExquisNote& note : notes){
+			if (note.coord.x != tuningModeBaseNode.x){
+				if (note.coord.y != tuningModeBaseNode.y){
+					note.color = XQ_COLOR_BLACK;
+				}else{
+					note.color = XQ_COLOR_WHITE;
+					note.brightness = .5f;
+				}
+
+			}else {
+				if (note.coord.y != tuningModeBaseNode.y){
+					note.color = XQ_COLOR_WHITE;
+					note.brightness = .5f;
+				}else{
+					note.color = XQ_COLOR_WHITE;
+					note.brightness = 1.f;
+				}
+			}
+		}
+		needsNoteDisplayUpdate=true;
+	}
+
+
+	void enterTuningMode(){
+		showSingleOctaveLayer();
+		tuningModeOn = true;
+	}
+	void exitTuningMode(){
+		showMainLayer();
+		tuningModeOn = false;
+	}
+	void enterArrangeMode(){
+		showSingleOctaveLayer();
+		arrangeModeOn = true;
+	}
+	void exitArrangeMode(){
+		showMainLayer();
+		arrangeModeOn = false;
+	}
+	void enterScaleSelectMode(){
+		showScaleClassSelectLayer();
+		scaleSelectModeOn = true;
+	}
+	void exitScaleSelectMode(){
+		showMainLayer();
+		scaleSelectModeOn = false;
+	}
+
+	void processMidiMessage(midi::Message msg) override {
+		// control sysex messages 
+		if (msg.bytes.size() == 8 && msg.bytes[0] == 0xf0 && msg.bytes[1] == 0x00 && msg.bytes[2] == 0x21 && msg.bytes[3] == 0x7e && msg.bytes[7] == 0xf7) {
+			uint8_t messageType = msg.bytes[4];
+			uint8_t controllerId = msg.bytes[5];
+			uint8_t value = msg.bytes[6];
+			switch (messageType){
+				case 0x08: // button press/release
+					switch (controllerId){
+						case 1: // tuning button
+							if (value == 1){
+								enterTuningMode();
+							}else{
+								exitTuningMode();
+							}
+							break;
+						case 3: // arrange button
+							if (value == 1){
+								enterArrangeMode();
+							}else{
+								exitArrangeMode();
+							}
+							break;
+						case 4: // scale select button
+							if (value == 1){
+								enterScaleSelectMode();
+							}else{
+								exitScaleSelectMode();
+							}
+							break;
+						case 10: // rotate color scheme 
+							if (value == 1){
+								colorScheme = (ColorScheme)((colorScheme + 1) % 4);
+								showAllOctavesLayer();
+							}
+							break;
+						case 12: // flip horizontally
+							if (arrangeModeOn){
+								if (value == 1){
+									scaleMapper.flipHorizontally();
+									showSingleOctaveLayer();
+								}
+							}
+							break;
+						case 13: // flip vertically
+							if (arrangeModeOn){
+								if (value == 1){
+									scaleMapper.flipVertically();
+									showSingleOctaveLayer();
+								}
+							}
+							break;
+					}
+					//message = "button " + std::to_string(controllerId) + " : " + std::to_string(value);
+					break;
+				case 0x0a: // rotary decrement
+					switch(controllerId){
+						case 0:
+							if (arrangeModeOn){
+								scaleMapper.shiftY(-1);
+								showSingleOctaveLayer();
+							}
+							break;
+						case 1:
+							if (arrangeModeOn){
+								scaleMapper.shiftX(1);
+								showSingleOctaveLayer();
+							}
+							break;
+						case 2:
+							if (arrangeModeOn){
+								scaleMapper.rotatePlus60();
+								showSingleOctaveLayer();
+							}
+							break;
+						case 3:
+							if (arrangeModeOn){
+								scaleMapper.skewY(-1);
+								showSingleOctaveLayer();
+							}
+							break;
+					}
+					//message = "rot " + std::to_string(controllerId) + " : -" + std::to_string(value);
+					break;
+				case 0x0b: // rotary increment
+					switch(controllerId){
+						case 0:
+							if (arrangeModeOn){
+								scaleMapper.shiftY(1);
+								showSingleOctaveLayer();
+							}
+							break;
+						case 1:
+							if (arrangeModeOn){
+								scaleMapper.shiftX(-1);
+								showSingleOctaveLayer();
+							}
+							break;
+						case 2:
+							//scaleMapper.skewY(1);
+							if (arrangeModeOn){
+								scaleMapper.rotateMinus60();
+								showSingleOctaveLayer();
+							}
+							break;
+						case 3:
+							if (arrangeModeOn){
+								scaleMapper.skewY(1);
+								showSingleOctaveLayer();
+							}
+							break;
+					}
+					//message = "rot " + std::to_string(controllerId) + " : +" + std::to_string(value);
+					break;
+				default:
+					break;
+			}
+		}
+		// react to button presses in tuning mode
+		if (tuningModeOn){
+			// note on: select interval to tune
+			if (msg.getStatus()==0x90){
+				uint8_t noteId = msg.getNote();
+				ExquisNote* note = getNoteByMidinote(noteId);
+				IntegerVector tuneInterval = note->scaleCoord - scaleMapper.exquis_base;
+				if (tuneInterval.x > 0 && tuneInterval.y > 0){
+					tuningModeTuneInterval = tuneInterval;
+				} // otherwise ignore
+			}
+		}
+		// react to button presses in scale select mode
+		if (scaleSelectModeOn){
+
+		}
+		
+	}
+
+
+};
+
+
+struct tuningModeHelper {
+	bool tuningModeOn = false;
+	ScaleVector tuneInterval;
+	ScaleVector lastTuneInterval;
+	ConsistentTuning* tuning;
+	tuningModeHelper(ConsistentTuning* tuning){
+		this->tuning = tuning;
+		//tuneInterval = tuning->
+
+	}
+};
+

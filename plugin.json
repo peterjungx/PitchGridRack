@@ -1,7 +1,7 @@
 {
   "slug": "PitchGrid",
   "name": "PitchGrid Rack",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "license": "GPL-3.0-or-later",
   "brand": "PitchGrid",
   "author": "Peter Jung",
@@ -28,6 +28,18 @@
       "slug": "MicroVOctMapper",
       "name": "Microtonal V/OCT Mapper",
       "description": "Microtonally map V/OCT to MV/OCT",
+      "manualUrl": "https://github.com/peterjungx/PitchGridRack",
+      "tags": [
+        "Quantizer",
+        "Tuner",
+        "Utility",
+        "Polyphonic"
+      ]
+    },
+    {
+      "slug": "MicroExquis",
+      "name": "Microtonal Exquis Interface",
+      "description": "Microtonal interface to the Exquis by Intuitive Instruments",
       "manualUrl": "https://github.com/peterjungx/PitchGridRack",
       "tags": [
         "Quantizer",
