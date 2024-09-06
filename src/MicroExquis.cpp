@@ -78,6 +78,8 @@ struct MicroExquis : Module {
 
 	dsp::ClockDivider lightDivider;
 
+	dsp::ClockDivider badlyImplementedValueUpdateDividerTODOMakeProperly;
+
 
 
 	MicroExquis() {
@@ -96,6 +98,7 @@ struct MicroExquis : Module {
 
 		timer.reset();
 		lightDivider.setDivision(16);
+		badlyImplementedValueUpdateDividerTODOMakeProperly.setDivision(12000);
 
 		exquis.tuning = &tuning;
 
@@ -155,47 +158,51 @@ struct MicroExquis : Module {
 	void process(const ProcessArgs& args) override {
 		//float fmParam = params[FM_PARAM].getValue();
 
-		float tuningOctaveParam = params[TUNING_OCTAVE_PARAM].getValue();
-		float tuningPitchAngleParam = params[TUNING_PITCHANGLE_PARAM].getValue();
-		float coloringSchemeParam = params[COLORING_SCHEME_PARAM].getValue();
-		float coloringModeParam = params[COLORING_MODE_PARAM].getValue();
-		float scaleStepsAParam = params[SCALE_STEPS_A_PARAM].getValue();
-		float scaleStepsBParam = params[SCALE_STEPS_B_PARAM].getValue();
-		float scaleModeParam = params[SCALE_MODE_PARAM].getValue();
-
-		uint8_t scaleStepsA = round(scaleStepsAParam);
-		uint8_t scaleStepsB = round(scaleStepsBParam);
-		uint8_t scaleMode = round(scaleModeParam * exquis.scaleMapper.scale.n);
-
-		
-
-		if (
-			scaleStepsA != last_scaleStepsA || 
-			scaleStepsB != last_scaleStepsB || 
-			scaleMode != last_scaleMode ||
-			tuningOctaveParam != last_tuningOctave ||
-			tuningPitchAngleParam != last_tuningPitchAngle
-			
-		){
-
-
-			tuning.setParams({scaleStepsA, scaleStepsB}, tuningOctaveParam, {1, 0}, pow(2.f, tuningPitchAngleParam/45.f));
-
-			message = "A: " + std::to_string(scaleStepsA) + " B: " + std::to_string(scaleStepsB);
-
-			exquis.scaleMapper.scale.setScaleClass({scaleStepsA, scaleStepsB});
-			exquis.scaleMapper.scale.mode = scaleMode;
-			exquis.showAllOctavesLayer();
-
-			//tuning.setParams({scaleStepsA, scaleStepsB}, tuningOctaveParam, {1, 0}, pow(2.f, tuningPitchAngleParam/45.f));
-
-			last_scaleStepsA = scaleStepsA;
-			last_scaleStepsB = scaleStepsB;
-			last_scaleMode = scaleMode;
-			last_tuningOctave = tuningOctaveParam;
-			last_tuningPitchAngle = tuningPitchAngleParam;
-
+		if (badlyImplementedValueUpdateDividerTODOMakeProperly.process()){
+			params[TUNING_OCTAVE_PARAM].setValue(tuning.vecToFreqRatioNoOffset(exquis.scaleMapper.scale.scale_class));
+			params[TUNING_PITCHANGLE_PARAM].setValue(tuning.vecToFreqRatioNoOffset({1,0}));
+			params[SCALE_MODE_PARAM].setValue((float)exquis.scaleMapper.scale.mode/exquis.scaleMapper.scale.n);
 		}
+		
+		//float tuningOctaveParam = params[TUNING_OCTAVE_PARAM].getValue();
+		//float tuningPitchAngleParam = params[TUNING_PITCHANGLE_PARAM].getValue();
+		//float coloringSchemeParam = params[COLORING_SCHEME_PARAM].getValue();
+		//float coloringModeParam = params[COLORING_MODE_PARAM].getValue();
+		//float scaleStepsAParam = params[SCALE_STEPS_A_PARAM].getValue();
+		//float scaleStepsBParam = params[SCALE_STEPS_B_PARAM].getValue();
+		//float scaleModeParam = params[SCALE_MODE_PARAM].getValue();
+
+		//uint8_t scaleStepsA = round(scaleStepsAParam);
+		//uint8_t scaleStepsB = round(scaleStepsBParam);
+		//uint8_t scaleMode = round(scaleModeParam * exquis.scaleMapper.scale.n);
+
+
+
+		//if (
+		//	scaleStepsA != last_scaleStepsA || 
+		//	scaleStepsB != last_scaleStepsB || 
+		//	scaleMode != last_scaleMode ||
+		//	tuningOctaveParam != last_tuningOctave ||
+		//	tuningPitchAngleParam != last_tuningPitchAngle
+		//	
+		//){
+		//	tuning.setParams({scaleStepsA, scaleStepsB}, tuningOctaveParam, {1, 0}, pow(2.f, tuningPitchAngleParam/45.f));
+		//
+		//	message = "A: " + std::to_string(scaleStepsA) + " B: " + std::to_string(scaleStepsB);
+		//
+		//	exquis.scaleMapper.scale.setScaleClass({scaleStepsA, scaleStepsB});
+		//	exquis.scaleMapper.scale.mode = scaleMode;
+		//	exquis.showAllOctavesLayer();
+		//
+		//	//tuning.setParams({scaleStepsA, scaleStepsB}, tuningOctaveParam, {1, 0}, pow(2.f, tuningPitchAngleParam/45.f));
+		//
+		//	last_scaleStepsA = scaleStepsA;
+		//	last_scaleStepsB = scaleStepsB;
+		//	last_scaleMode = scaleMode;
+		//	last_tuningOctave = tuningOctaveParam;
+		//	last_tuningPitchAngle = tuningPitchAngleParam;
+		//
+		//}
 
 
 		float dt = timer.process(args.sampleTime);
@@ -256,10 +263,10 @@ struct MicroExquis : Module {
 		outputs[MVOCT_OUTPUT].setChannels(channels);
 
 
-		if (lightDivider.process()) {
-			lights[COLORING_MODE_LIGHT].setBrightness(coloringModeParam);
-			lights[SCALE_MODE_LIGHT].setBrightness(scaleModeParam);
-		}
+		//if (lightDivider.process()) {
+		//	lights[COLORING_MODE_LIGHT].setBrightness(coloringModeParam);
+		//	lights[SCALE_MODE_LIGHT].setBrightness(scaleModeParam);
+		//}
 
 	}
 

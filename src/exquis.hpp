@@ -76,6 +76,70 @@ struct ExquisNote {
 	uint8_t coordToId(){
 		return uint8_t(coord.y + 6*coord.x - 2*(coord.x/2) - coord.x%2);
 	}
+	void sendSetMidinoteMessage(midi::Output* midi_output){
+		midi::Message msg;
+		// F0 00 21 7E 04 noteId midinote F7
+		msg.bytes = {0xf0, 0x00, 0x21, 0x7e, 0x04, noteId, midinote, 0xf7};
+		midi_output->sendMessage(msg);
+	}
+	void sendSetColorMessage(midi::Output* midi_output, Color color){
+		midi::Message msg;
+		// F0 00 21 7E 03 noteId r g b F7
+		msg.bytes = {0xf0, 0x00, 0x21, 0x7e, 0x03, noteId, color.r, color.g, color.b, 0xf7};
+		midi_output->sendMessage(msg);
+	}
+};
+
+struct Exquis;
+
+struct ExquisBreathingNote {
+    ExquisNote* note = NULL;
+    midi::Output* midi_output;
+    float period;
+    float phase;
+    bool active = false;
+
+    dsp::ClockDivider clockDivider;
+    ExquisBreathingNote(){
+        this->phase = 0.f;
+        clockDivider.setDivision(1500); // 32Hz at 48kHz
+    }
+    void config(midi::Output* midi_output, float period){
+        this->midi_output = midi_output;
+        this->period = 32.f * period;
+    }
+
+    void process(){
+        if (!active || note == NULL){
+            return;
+        }
+        if (clockDivider.process()){
+            phase += 1.f / period;
+            if (phase > 1.f){
+                phase -= 1.f;
+            }
+            float brightness = fabs(2.f * phase - 1.f);
+            note->sendSetColorMessage(midi_output, note->color * brightness);
+            
+        }
+    }
+
+    void startWithNote(ExquisNote* note){
+        if (active){
+            stop();
+        }
+        this->note = note;
+        active = true;
+        phase = 0.f;
+
+    }
+    void stop(){
+        if(note != NULL){
+            note->sendSetColorMessage(midi_output, note->color * note->brightness);
+        }
+        active = false;
+        note = NULL;
+    }
 };
 
 
@@ -88,6 +152,10 @@ struct Exquis {
     bool needsMidinoteValuesUpdate = true;
 
     dsp::ClockDivider xqNoteDisplayUpdateClock;
+
+    ExquisBreathingNote tuningRetuneNote;
+    ExquisBreathingNote tuningConstantNote;
+
 	
 	Exquis(){
 		for (int noteId = 0; noteId < 61; noteId++){
@@ -95,6 +163,9 @@ struct Exquis {
 			notes.push_back(note);
 		}
         xqNoteDisplayUpdateClock.setDivision(4800); // 10FPS at 48kHz
+
+        tuningRetuneNote.config(&midi_output, .3f);
+        tuningConstantNote.config(&midi_output, 1.5f);
 	}
 
     virtual void processMidiMessage(midi::Message msg){
@@ -113,6 +184,13 @@ struct Exquis {
                 setNoteColors();
             }
         }
+        if (tuningRetuneNote.active){
+            tuningRetuneNote.process();
+        }
+        if (tuningConstantNote.active){
+            tuningConstantNote.process();
+        }
+
     }
 
 	void setNoteColors(){
@@ -121,7 +199,7 @@ struct Exquis {
             return;
         }
 		for (ExquisNote& note : notes){
-			sendSetColorMessage(note.noteId, note.color * note.brightness);
+            note.sendSetColorMessage(&midi_output, note.color * note.brightness);
 		}
 	}
 	void setNoteMidinoteValues(){
@@ -130,7 +208,7 @@ struct Exquis {
             return;
         }
 		for (ExquisNote& note : notes){
-			sendSetMidinoteMessage(note.noteId, note.midinote);
+			note.sendSetMidinoteMessage(&midi_output);
 		}
 	}
 
@@ -160,18 +238,6 @@ struct Exquis {
 		msg.bytes = {0xf0, 0x00, 0x21, 0x7e, 0xf7};
 		midi_output.sendMessage(msg);
 	}
-	void sendSetMidinoteMessage(uint8_t noteId, uint8_t midinote){
-		midi::Message msg;
-		// F0 00 21 7E 04 noteId midinote F7
-		msg.bytes = {0xf0, 0x00, 0x21, 0x7e, 0x04, noteId, midinote, 0xf7};
-		midi_output.sendMessage(msg);
-	}
-	void sendSetColorMessage(uint8_t noteId, Color color){
-		midi::Message msg;
-		// F0 00 21 7E 03 noteId r g b F7
-		msg.bytes = {0xf0, 0x00, 0x21, 0x7e, 0x03, noteId, color.r, color.g, color.b, 0xf7};
-		midi_output.sendMessage(msg);
-	}
 	ExquisNote* getNoteByMidinote(uint8_t midinote){
 		return &notes[midinote - 36];
 	}
@@ -182,3 +248,5 @@ struct Exquis {
 	}
 
 };
+
+
