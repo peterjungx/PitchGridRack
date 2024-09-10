@@ -1,6 +1,6 @@
 #include "pitchgrid.hpp"
 #include "exquis.hpp"
-
+#include "continuedFraction.hpp"
 
 struct ExquisScaleMapper {
 	RegularScale scale = RegularScale({2,5},1);
@@ -112,7 +112,8 @@ struct PitchGridExquis: Exquis {
 	bool scaleSelectModeOn = false;
 
 
-	ExquisVector tuningModeBaseNode = {0,2};
+	ExquisVector scaleSelectModeBaseNode = {0,2};
+	
 	ScaleVector tuningModeRetuneInterval = {0,0};
 	ScaleVector tuningModeConstantInterval = {0,0};
 
@@ -246,25 +247,51 @@ struct PitchGridExquis: Exquis {
 		needsNoteDisplayUpdate=true;
 	}
 
+	ScaleVector scaleClassForNote(ExquisNote* note){
+		ScaleVector scaleClass = ScaleVector(note->coord-scaleSelectModeBaseNode);
+		scaleClass = {scaleClass.y, scaleClass.x};
+		return scaleClass;
+	}
+
 	void showScaleClassSelectLayer(){
 		for (ExquisNote& note : notes){
-			if (note.coord.x != tuningModeBaseNode.x){
-				if (note.coord.y != tuningModeBaseNode.y){
-					note.color = XQ_COLOR_BLACK;
-				}else{
-					note.color = XQ_COLOR_WHITE;
-					note.brightness = .5f;
-				}
 
-			}else {
-				if (note.coord.y != tuningModeBaseNode.y){
-					note.color = XQ_COLOR_WHITE;
-					note.brightness = .5f;
+			ScaleVector scaleClass = scaleClassForNote(&note);
+
+			if (scaleClass.x > 0 && scaleClass.y > 0){
+				// scale class selection area
+				if (scaleMapper.scale.isCoprimeScaleVector(scaleClass)){
+					if (scaleClass == ScaleVector(2,5)){
+						note.color = XQ_COLOR_GREEN;
+						note.brightness = 1.f;
+					}else{
+						note.color = XQ_COLOR_CYAN;
+						note.brightness = .5f;
+					}
+					if (scaleClass == scaleMapper.scale.scale_class){
+						selectedScaleNote.startWithNote(&note);
+					}
 				}else{
-					note.color = XQ_COLOR_WHITE;
-					note.brightness = 1.f;
+					note.color = XQ_COLOR_BLACK;
+					note.brightness = 0.f;
 				}
+				
+			}else if (scaleClass.x < 0){
+				note.color = XQ_COLOR_BLACK;
+				note.brightness = 0.f;
+			}else if (scaleClass.y < 0){
+				note.color = XQ_COLOR_BLACK;
+				note.brightness = 0.f;
+			}else if (scaleClass == ZERO_VECTOR){
+				// origin
+				note.color = XQ_COLOR_WHITE;
+				note.brightness = 1.f;
+			}else{
+				// axes
+				note.color = XQ_COLOR_WHITE;
+				note.brightness = .3f;
 			}
+				
 		}
 		needsNoteDisplayUpdate=true;
 	}
@@ -304,6 +331,7 @@ struct PitchGridExquis: Exquis {
 	}
 	void exitScaleSelectMode(){
 		showMainLayer();
+		selectedScaleNote.stop();
 		scaleSelectModeOn = false;
 	}
 
@@ -317,6 +345,21 @@ struct PitchGridExquis: Exquis {
 			float retune_f = tuning->vecToFreqRatioNoOffset(tuningModeRetuneInterval);
 			float constant_f = tuning->vecToFreqRatioNoOffset(tuningModeConstantInterval);
 			tuning->setParams(tuningModeRetuneInterval, retune_f*exp(0.01*amount), tuningModeConstantInterval, constant_f);
+		}
+	}
+
+	void justifyTuning(){
+		INFO("justifyTuning");
+		if (tuningModeOn && tuningConstantNoteSelected){
+			// tune selected note to a close just interval while keeping the other note constant
+			float f = tuning->vecToFreqRatioNoOffset( tuningModeRetuneInterval );
+			Fraction approx = closestRational(f, scaleMapper.scale.n);
+			INFO("retune from %f to  %d/%d (%f)", f, approx.numerator, approx.denominator, approx.toFloat());
+
+			tuning->setParams(tuningModeRetuneInterval, approx.toFloat(), tuningModeConstantInterval, tuning->vecToFreqRatioNoOffset(tuningModeConstantInterval));
+			
+
+
 		}
 	}
 
@@ -370,6 +413,10 @@ struct PitchGridExquis: Exquis {
 								if (value == 1){
 									scaleMapper.flipVertically();
 									showSingleOctaveLayer();
+								}
+							}else if (tuningModeOn){
+								if (value == 1){
+									justifyTuning();
 								}
 							}
 							break;
@@ -494,7 +541,18 @@ struct PitchGridExquis: Exquis {
 		}
 		// react to button presses in scale select mode
 		if (scaleSelectModeOn){
-
+			// note on: select interval to tune
+			if (msg.getStatus()==0x9){
+				
+				uint8_t noteId = msg.getNote();
+				
+				ExquisNote* note = getNoteByMidinote(noteId);
+				ScaleVector scaleClass = scaleClassForNote(note);
+				if (scaleClass.x > 0 && scaleClass.y > 0 && scaleMapper.scale.isCoprimeScaleVector(scaleClass)){
+					scaleMapper.scale.setScaleClass(scaleClass);
+					selectedScaleNote.startWithNote(note);
+				}
+			}
 		}
 		
 	}

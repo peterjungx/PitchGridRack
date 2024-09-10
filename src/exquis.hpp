@@ -156,6 +156,8 @@ struct Exquis {
     ExquisBreathingNote tuningRetuneNote;
     ExquisBreathingNote tuningConstantNote;
 
+    ExquisBreathingNote selectedScaleNote;
+
 	
 	Exquis(){
 		for (int noteId = 0; noteId < 61; noteId++){
@@ -166,6 +168,7 @@ struct Exquis {
 
         tuningRetuneNote.config(&midi_output, .3f);
         tuningConstantNote.config(&midi_output, 1.5f);
+        selectedScaleNote.config(&midi_output, .7f);
 	}
 
     virtual void processMidiMessage(midi::Message msg){
@@ -189,6 +192,9 @@ struct Exquis {
         }
         if (tuningConstantNote.active){
             tuningConstantNote.process();
+        }
+        if (selectedScaleNote.active){
+            selectedScaleNote.process();
         }
 
     }

@@ -27,7 +27,7 @@ public:
 		assert(this->det != 0);
 		this->log2f1 = log2(f1);
 		this->log2f2 = log2(f2);
-		this->offset = 0.f;
+		//this->offset = 0.f;
 	};
 	float vecToFreqRatio(ScaleVector v){
 		float z1 = IntegerDet(v, this->v2) / this->det;
@@ -72,6 +72,15 @@ public:
 };
 
 
+int IntegerGCD(int a, int b){
+	while (b != 0){
+		int t = b;
+		b = a % b;
+		a = t;
+	}
+	return a;
+}
+
 struct RegularScale {
 	// a regular scale 
 
@@ -86,6 +95,9 @@ struct RegularScale {
 	void setScaleClass(ScaleVector scale_class){
 		this->scale_class = scale_class;
 		n = scale_class.x + scale_class.y;
+		if (mode>=n){
+			mode = n-1;
+		}
 	}
 	ScaleVector scaleNoteSeqNrToCoord(int seqNr){
 		int x = (int)(scale_class.x * seqNr - 1.f * mode / n - .5f);
@@ -96,4 +108,12 @@ struct RegularScale {
 		int d = c.x*scale_class.y - c.y*scale_class.x  + mode;
 		return d<0? -1 : d>=n? -1 : (d+ n-mode ) % n;
 	}
+
+
+	bool isCoprimeScaleVector(ScaleVector v){
+		return IntegerGCD(v.x, v.y) == 1;
+	}
+
 };
+
+
