@@ -1,4 +1,6 @@
 #include "plugin.hpp"
+#include "pitchgrid.hpp"
+#include "datalink.hpp"
 
 using simd::float_4;
 
@@ -120,33 +122,33 @@ struct VoltageControlledSinOsc {
 
 
 
-class ConsistentTuning {
-	int a1, b1;
-	float f1;
-	int a2, b2;
-	float f2;
-	float det;
-public:
-	ConsistentTuning(int a1, int b1, float f1, int a2, int b2, float f2) {
-		this->setParams(a1, b1, f1, a2, b2, f2);
-	};
-	void setParams(int a1, int b1, float f1, int a2, int b2, float f2) {
-		this->a1 = a1;
-		this->b1 = b1;
-		this->f1 = f1;
-		this->a2 = a2;
-		this->b2 = b2;
-		this->f2 = f2;
-		this->det = a1 * b2 - a2 * b1;
-		assert(this->det != 0.f);
-	};
-	float vecToFreqRatio(int a, int b){
-		float z1 = (- this->a2 * b + this->b2 * a) / this->det;
-		float z2 = (this->a1 * b - this->b1 * a)  / this->det;
-		float f = pow(this->f1, z1) * pow(this->f2, z2);
-		return f;
-	};
-};
+//class ConsistentTuning {
+//	int a1, b1;
+//	float f1;
+//	int a2, b2;
+//	float f2;
+//	float det;
+//public:
+//	ConsistentTuning(int a1, int b1, float f1, int a2, int b2, float f2) {
+//		this->setParams(a1, b1, f1, a2, b2, f2);
+//	};
+//	void setParams(int a1, int b1, float f1, int a2, int b2, float f2) {
+//		this->a1 = a1;
+//		this->b1 = b1;
+//		this->f1 = f1;
+//		this->a2 = a2;
+//		this->b2 = b2;
+//		this->f2 = f2;
+//		this->det = a1 * b2 - a2 * b1;
+//		assert(this->det != 0.f);
+//	};
+//	float vecToFreqRatio(int a, int b){
+//		float z1 = (- this->a2 * b + this->b2 * a) / this->det;
+//		float z2 = (this->a1 * b - this->b1 * a)  / this->det;
+//		float f = pow(this->f1, z1) * pow(this->f2, z2);
+//		return f;
+//	};
+//};
 
 const int NUM_OSCILLATORS = 9;
 
@@ -183,6 +185,7 @@ struct VCOMH : Module {
 		PITCH_INPUT,
 		FM_INPUT,
 		SYNC_INPUT,
+		TUNING_DATA_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -198,6 +201,7 @@ struct VCOMH : Module {
 
 	VoltageControlledSinOsc<16, 16, float_4> oscillators[4*NUM_OSCILLATORS];
 	dsp::ClockDivider lightDivider;
+	dsp::ClockDivider onceASecDivider;
 
 	enum class TuningPresets : int {
 		TUNING_12TET = 0,
@@ -211,7 +215,10 @@ struct VCOMH : Module {
 	};
 
 	TuningPresets tuningPreset = TuningPresets::TUNING_12TET;
-	ConsistentTuning tuning = ConsistentTuning(2, 5, 2.f, 1, 3, pow(2.f, 7.f/12.f)); // 12TET
+	ConsistentTuning tuning = ConsistentTuning({2, 5}, 2.f, {1, 3}, pow(2.f, 7.f/12.f)); // 12TET
+	RegularScale scale = RegularScale({2, 5}, 1);
+
+	TuningDataReceiver tuningDataReceiver;
 
 
 	VCOMH() {
@@ -246,10 +253,14 @@ struct VCOMH : Module {
 		configInput(PITCH_INPUT, "1V/octave pitch");
 		configInput(FM_INPUT, "Frequency modulation");
 		configInput(SYNC_INPUT, "Sync");
+		configInput(TUNING_DATA_INPUT, "Tuning Data");
 
 		configOutput(SIN_OUTPUT, "Sine");
 
 		lightDivider.setDivision(16);
+		onceASecDivider.setDivision(4800);
+
+		tuningDataReceiver.initialize();
 
 
 	}
@@ -262,42 +273,42 @@ struct VCOMH : Module {
 
 		switch (tuningPreset) {
 			case TuningPresets::TUNING_12TET:
-				tuning.setParams(2, 5, 2.f, 1, 0, pow(2.f, 1.f/12.f));
+				tuning.setParams({2, 5}, 2.f, {1, 0}, pow(2.f, 1.f/12.f));
 				break;
 			case TuningPresets::TUNING_PYTHAGOREAN:
-				tuning.setParams(2, 5, 2.f, 1, 3, 3.f/2.f);
+				tuning.setParams({2, 5}, 2.f, {1, 3}, 3.f/2.f);
 				break;
 			case TuningPresets::TUNING_QUARTERCOMMA_MEANTONE:
-				tuning.setParams(2, 5, 2.f, 0, 2, 5.f/4.f);
+				tuning.setParams({2, 5}, 2.f, {0, 2}, 5.f/4.f);
 				break;
 			case TuningPresets::TUNING_THIRDCOMMA_MEANTONE:
-				tuning.setParams(2, 5, 2.f, 1, 1, 6.f/5.f);
+				tuning.setParams({2, 5}, 2.f, {1, 1}, 6.f/5.f);
 				break;
 			case TuningPresets::TUNING_5LIMIT_CLEANTONE:
-				tuning.setParams(0, 2, 5.f/4.f, 1, 3, 3.f/2.f);
+				tuning.setParams({0, 2}, 5.f/4.f, {1, 3}, 3.f/2.f);
 				break;
 			case TuningPresets::TUNING_7LIMIT_CLEANTONE:
-				tuning.setParams(1, 1, 7.f/6.f, 1, 3, 3.f/2.f);
+				tuning.setParams({1, 1}, 7.f/6.f, {1, 3}, 3.f/2.f);
 				break;
 			case TuningPresets::TUNING_19TET:
-				tuning.setParams(2, 5, 2.f, 1, 0, pow(2.f, 2.f/19.f));
+				tuning.setParams({2, 5}, 2.f, {1, 0}, pow(2.f, 2.f/19.f));
 				break;
 			case TuningPresets::TUNING_31TET:
-				tuning.setParams(2, 5, 2.f, 1, 0, pow(2.f, 3.f/31.f));
+				tuning.setParams({2, 5}, 2.f, {1, 0}, pow(2.f, 3.f/31.f));
 				break;
 		}
 	
 		int harm5_a = tuningPreset == TuningPresets::TUNING_THIRDCOMMA_MEANTONE ? 5 : 4;
 		int harm5_b = tuningPreset == TuningPresets::TUNING_THIRDCOMMA_MEANTONE ? 11 : 12;
-		params[RELFREQ1_PARAM].setValue(tuning.vecToFreqRatio(-2, -5));
-		params[RELFREQ2_PARAM].setValue(tuning.vecToFreqRatio(1, 3));
+		params[RELFREQ1_PARAM].setValue(tuning.vecToFreqRatio({-2, -5}));
+		params[RELFREQ2_PARAM].setValue(tuning.vecToFreqRatio({1, 3}));
 		//
-		params[RELFREQ4_PARAM].setValue(tuning.vecToFreqRatio(2, 5));
-		params[RELFREQ5_PARAM].setValue(tuning.vecToFreqRatio(3, 8));
-		params[RELFREQ6_PARAM].setValue(tuning.vecToFreqRatio(4, 10));
-		params[RELFREQ7_PARAM].setValue(tuning.vecToFreqRatio(harm5_a, harm5_b));
-		params[RELFREQ8_PARAM].setValue(tuning.vecToFreqRatio(5, 13));
-		params[RELFREQ9_PARAM].setValue(tuning.vecToFreqRatio(6, 15));
+		params[RELFREQ4_PARAM].setValue(tuning.vecToFreqRatio({2, 5}));
+		params[RELFREQ5_PARAM].setValue(tuning.vecToFreqRatio({3, 8}));
+		params[RELFREQ6_PARAM].setValue(tuning.vecToFreqRatio({4, 10}));
+		params[RELFREQ7_PARAM].setValue(tuning.vecToFreqRatio({harm5_a, harm5_b}));
+		params[RELFREQ8_PARAM].setValue(tuning.vecToFreqRatio({5, 13}));
+		params[RELFREQ9_PARAM].setValue(tuning.vecToFreqRatio({6, 15}));
 
 	}
 
@@ -389,6 +400,26 @@ struct VCOMH : Module {
 			}
 			lights[LINEAR_LIGHT].setBrightness(linear);
 			lights[SOFT_LIGHT].setBrightness(soft);
+
+			//tuningDataReceiver.getTuningData(&tuning, &scale);
+		}
+		if (onceASecDivider.process()) {
+			if (inputs[TUNING_DATA_INPUT].isConnected()) {
+				tuningDataReceiver.getTuningData(&tuning, &scale);
+
+				params[RELFREQ1_PARAM].setValue(tuning.vecToFreqRatio(-scale.scale_class));
+				params[RELFREQ2_PARAM].setValue(tuning.vecToFreqRatio(tuning.V1()));
+				//
+				params[RELFREQ4_PARAM].setValue(tuning.vecToFreqRatio(scale.scale_class));
+				params[RELFREQ5_PARAM].setValue(tuning.vecToFreqRatio(tuning.V1()+scale.scale_class));
+				params[RELFREQ6_PARAM].setValue(tuning.vecToFreqRatio(scale.scale_class*2));
+				params[RELFREQ7_PARAM].setValue(tuning.vecToFreqRatio(tuning.V2()+scale.scale_class*2));
+				params[RELFREQ8_PARAM].setValue(tuning.vecToFreqRatio(tuning.V1()+scale.scale_class*2));
+				params[RELFREQ9_PARAM].setValue(tuning.vecToFreqRatio({3*scale.scale_class.x, 3*scale.scale_class.y}));
+			}
+		}
+		if (inputs[TUNING_DATA_INPUT].isConnected()) {
+			tuningDataReceiver.processWithInput(&inputs[TUNING_DATA_INPUT]);
 		}
 	}
 
@@ -450,6 +481,7 @@ struct VCOMHWidget : ModuleWidget {
 		addInput(createInputCentered<ThemedPJ301MPort>(mm2px(Vec(6.607, 113.115)), module, VCOMH::FM_INPUT));
 		addInput(createInputCentered<ThemedPJ301MPort>(mm2px(Vec(17.444, 113.115)), module, VCOMH::PITCH_INPUT));
 		addInput(createInputCentered<ThemedPJ301MPort>(mm2px(Vec(28.282, 113.115)), module, VCOMH::SYNC_INPUT));
+		addInput(createInputCentered<ThemedPJ301MPort>(mm2px(Vec(39.15, 96.859)), module, VCOMH::TUNING_DATA_INPUT));
 
 		addOutput(createOutputCentered<ThemedPJ301MPort>(mm2px(Vec(39.15, 113.115)), module, VCOMH::SIN_OUTPUT));
 

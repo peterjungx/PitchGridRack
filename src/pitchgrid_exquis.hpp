@@ -353,11 +353,11 @@ struct PitchGridExquis: Exquis {
 		if (tuningModeOn && tuningConstantNoteSelected){
 			// tune selected note to a close just interval while keeping the other note constant
 			float f = tuning->vecToFreqRatioNoOffset( tuningModeRetuneInterval );
-			Fraction approx = closestRational(f, scaleMapper.scale.n);
+			Fraction approx = closestRational(f, 2*scaleMapper.scale.n);
 			INFO("retune from %f to  %d/%d (%f)", f, approx.numerator, approx.denominator, approx.toFloat());
 
 			tuning->setParams(tuningModeRetuneInterval, approx.toFloat(), tuningModeConstantInterval, tuning->vecToFreqRatioNoOffset(tuningModeConstantInterval));
-			
+
 
 
 		}
@@ -549,8 +549,10 @@ struct PitchGridExquis: Exquis {
 				ExquisNote* note = getNoteByMidinote(noteId);
 				ScaleVector scaleClass = scaleClassForNote(note);
 				if (scaleClass.x > 0 && scaleClass.y > 0 && scaleMapper.scale.isCoprimeScaleVector(scaleClass)){
+					INFO("selected scale class: %d %d", scaleClass.x, scaleClass.y);
 					scaleMapper.scale.setScaleClass(scaleClass);
 					selectedScaleNote.startWithNote(note);
+					INFO("scale class selected: %d %d", scaleClass.x, scaleClass.y);
 				}
 			}
 		}
