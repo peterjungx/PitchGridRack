@@ -38,10 +38,10 @@
      inkscape:window-height="1387"
      id="namedview216"
      showgrid="false"
-     inkscape:zoom="3.4340066"
-     inkscape:cx="72.073246"
-     inkscape:cy="122.30611"
-     inkscape:window-x="36"
+     inkscape:zoom="12.543357"
+     inkscape:cx="115.79835"
+     inkscape:cy="294.97686"
+     inkscape:window-x="35"
      inkscape:window-y="25"
      inkscape:window-maximized="0"
      inkscape:current-layer="aa880d18-cfe8-4bd2-bda2-afb179f11477"
@@ -147,6 +147,15 @@
        fill="#1f1f1f"
        id="rect12"
        style="stroke-width:0.497345" />
+    <rect
+       x="99.972466"
+       y="262.52823"
+       width="30.832525"
+       height="39.19244"
+       rx="0.70115703"
+       fill="#1f1f1f"
+       id="rect12-7"
+       style="display:inline;stroke-width:0.497345" />
     <g
        id="g40">
       <circle
@@ -306,6 +315,11 @@
        style="font-size:26.5758px;font-family:'Arial Black';-inkscape-font-specification:'Arial Black, ';fill:#2b1100;stroke-width:1.99318"
        transform="scale(1.4012514,0.71364781)"
        aria-label="s" />
+    <path
+       style="font-size:8px;font-family:'Arial Black';-inkscape-font-specification:'Arial Black, ';fill:#ececec;fill-opacity:1"
+       d="m 104.14301,266.21954 h 5.3789 v 1.41407 h -1.80469 v 4.3125 h -1.76953 v -4.3125 h -1.80468 z m 6.20312,0 h 2.62891 q 0.77734,0 1.2539,0.21094 0.48047,0.21094 0.79297,0.60547 0.3125,0.39453 0.45313,0.91797 0.14062,0.52344 0.14062,1.10937 0,0.91797 -0.21094,1.42578 -0.20703,0.50391 -0.57812,0.84766 -0.37109,0.33984 -0.79688,0.45313 -0.58203,0.15625 -1.05468,0.15625 h -2.62891 z m 1.76953,1.29688 v 3.1289 h 0.4336 q 0.55468,0 0.78906,-0.12109 0.23437,-0.125 0.36719,-0.42969 0.13281,-0.30859 0.13281,-0.99609 0,-0.91016 -0.29688,-1.24609 -0.29687,-0.33594 -0.98437,-0.33594 z m 7.60938,3.48437 h -2.01563 l -0.27734,0.94532 h -1.8086 l 2.15235,-5.72657 h 1.92969 l 2.15234,5.72657 h -1.85156 z m -0.3711,-1.23828 -0.63281,-2.05859 -0.62891,2.05859 z m 2.11719,-3.54297 h 5.37891 v 1.41407 h -1.80469 v 4.3125 h -1.76953 v -4.3125 h -1.80469 z"
+       id="text2"
+       aria-label="TDAT" />
   </g>
   <g
      id="ea3a177d-3d4f-428c-a0c9-a5628575e869"

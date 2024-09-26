@@ -57,7 +57,7 @@ struct MicroExquis : Module {
 		TUNING_7LIMIT_CLEANTONE = 5,
 		TUNING_19TET = 6,
 		TUNING_31TET = 7,
-		TUNING_FREE = 8
+		TUNING_EXQUIS = 8
 	};
 
 
@@ -101,6 +101,8 @@ struct MicroExquis : Module {
 
 	bool initialized = false;
 
+	std::string tuning_info_string = "manual tuning";
+
 	TuningDataSender tuningDataSender = TuningDataSender();
 
 	MicroExquis() {
@@ -127,6 +129,8 @@ struct MicroExquis : Module {
 
 		exquis.tuning = &tuning;
 
+		
+
 	}
 
 	int getTuningPreset() {
@@ -138,12 +142,15 @@ struct MicroExquis : Module {
 		switch (tuningPreset) {
 			case TuningPresets::TUNING_12TET:
 				tuning.setParams({2, 5}, 2.f, {1, 0}, pow(2.f, 1.f/12.f));
+				//tuning.setParams({1, 3}, pow(2.f, 7.f/12.f), {0, 2}, pow(2.f, 4.f/12.f));
 				break;
 			case TuningPresets::TUNING_PYTHAGOREAN:
 				tuning.setParams({2, 5}, 2.f, {1, 3}, 3.f/2.f);
+				//tuning.setParams({1, 3}, 3.f/2.f, {0, 2}, 81.f/64.f);
 				break;
 			case TuningPresets::TUNING_QUARTERCOMMA_MEANTONE:
 				tuning.setParams({2, 5}, 2.f, {0, 2}, 5.f/4.f);
+				//tuning.setParams({2, 5}, 2.f, {0, 2}, 5.f/4.f);
 				break;
 			case TuningPresets::TUNING_THIRDCOMMA_MEANTONE:
 				tuning.setParams({2, 5}, 2.f, {1, 1}, 6.f/5.f);
@@ -161,6 +168,7 @@ struct MicroExquis : Module {
 				tuning.setParams({2, 5}, 2.f, {1, 0}, pow(2.f, 3.f/31.f));
 				break;
 		}
+		exquis.didManualRetune = false;
 
 	}
 
@@ -177,6 +185,13 @@ struct MicroExquis : Module {
 		params[SCALE_STEPS_A_PARAM].setValue(scaleStepsA);
 		params[SCALE_STEPS_B_PARAM].setValue(scaleStepsB);
 		params[SCALE_MODE_PARAM].setValue(scaleMode);
+	}
+
+	void setTuningInfoString(){
+		tuning_info_string = "(" + std::to_string(tuning.V1().x) + "," + std::to_string(tuning.V1().y) + ")=" 
+							+ std::to_string(int(1200*log2(tuning.F1())+0.5f)) 
+							+ "ct (" + std::to_string(tuning.V2().x) + "," + std::to_string(tuning.V2().y) + ")="
+							+ std::to_string(int(1200*log2(tuning.F2())+0.5f)) + "ct";
 	}
 
 
@@ -232,6 +247,13 @@ struct MicroExquis : Module {
 				//scaleModeParam = params[SCALE_MODE_PARAM].getValue();				
 			}
 
+			if (exquis.didManualRetune){
+				tuningPreset = MicroExquis::TuningPresets::TUNING_EXQUIS;
+				setTuningInfoString();
+				exquis.didManualRetune = false;
+			}
+			
+
 		}
 
 
@@ -242,9 +264,6 @@ struct MicroExquis : Module {
 		scaleStepsAParam = params[SCALE_STEPS_A_PARAM].getValue();
 		scaleStepsBParam = params[SCALE_STEPS_B_PARAM].getValue();
 		scaleModeParam = params[SCALE_MODE_PARAM].getValue();
-		
-		
-
 
 		uint8_t scaleStepsA = round(scaleStepsAParam);
 		uint8_t scaleStepsB = round(scaleStepsBParam);
@@ -376,7 +395,9 @@ struct MicroExquisTuningDisplay: TuningDisplay {
 				module->tuningPreset == MicroExquis::TuningPresets::TUNING_5LIMIT_CLEANTONE ? "5-limit (Cleantone)" :
 				module->tuningPreset == MicroExquis::TuningPresets::TUNING_7LIMIT_CLEANTONE ? "7-limit (m3=7/6 P5=3/2)" :
 				module->tuningPreset == MicroExquis::TuningPresets::TUNING_19TET ? "19-TET" :
-				module->tuningPreset == MicroExquis::TuningPresets::TUNING_31TET ? "31-TET" : "Unknown";
+				module->tuningPreset == MicroExquis::TuningPresets::TUNING_31TET ? "31-TET" : 
+				module->tuningPreset == MicroExquis::TuningPresets::TUNING_EXQUIS ? module->tuning_info_string : 
+				"Unknown";
 		}
 	};
 };
@@ -419,7 +440,7 @@ struct MicroExquisWidget : ModuleWidget {
 		display->module = module;
 		addChild(display);
 
-		InfoDisplay* infoDisplay = createWidget<InfoDisplay>(mm2px(Vec(2.0, 68.0)));
+		InfoDisplay* infoDisplay = createWidget<InfoDisplay>(mm2px(Vec(2.0, 70.0)));
 		infoDisplay->box.size = mm2px(Vec(42, 7));
 		infoDisplay->module = module;
 		addChild(infoDisplay);

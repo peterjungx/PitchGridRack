@@ -10,8 +10,8 @@ union {
 
 
 struct DataLink {
-    FloatUnion START_MESSAGE = {255, 111, 222, 110};
-    FloatUnion END_MESSAGE = {255, 111, 222, 110};
+    FloatUnion START_MESSAGE = {012, 013, 014, 015};
+    FloatUnion END_MESSAGE = {012, 013, 014, 016};
     std::vector<FloatUnion> dataRed;
     std::vector<FloatUnion> dataBlue;
     unsigned int num_values = 0;
@@ -48,3 +48,4 @@ struct TuningDataReceiver: DataReceiver {
     void initialize();
     void getTuningData(ConsistentTuning* tuning, RegularScale* scale);
 };
+

@@ -121,6 +121,8 @@ struct PitchGridExquis: Exquis {
 	ExquisScaleMapper scaleMapper;
 	ConsistentTuning* tuning;
 
+	bool didManualRetune = false;
+
 
 
 	enum ColorScheme {
@@ -346,6 +348,8 @@ struct PitchGridExquis: Exquis {
 			float constant_f = tuning->vecToFreqRatioNoOffset(tuningModeConstantInterval);
 			tuning->setParams(tuningModeRetuneInterval, retune_f*exp(0.01*amount), tuningModeConstantInterval, constant_f);
 		}
+
+		didManualRetune = true;
 	}
 
 	void justifyTuning(){
@@ -358,7 +362,7 @@ struct PitchGridExquis: Exquis {
 
 			tuning->setParams(tuningModeRetuneInterval, approx.toFloat(), tuningModeConstantInterval, tuning->vecToFreqRatioNoOffset(tuningModeConstantInterval));
 
-
+			didManualRetune = true;
 
 		}
 	}
@@ -563,15 +567,4 @@ struct PitchGridExquis: Exquis {
 };
 
 
-struct tuningModeHelper {
-	bool tuningModeOn = false;
-	ScaleVector tuneInterval;
-	ScaleVector lastTuneInterval;
-	ConsistentTuning* tuning;
-	tuningModeHelper(ConsistentTuning* tuning){
-		this->tuning = tuning;
-		//tuneInterval = tuning->
-
-	}
-};
 

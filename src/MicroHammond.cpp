@@ -211,7 +211,9 @@ struct VCOMH : Module {
 		TUNING_5LIMIT_CLEANTONE = 4,
 		TUNING_7LIMIT_CLEANTONE = 5,
 		TUNING_19TET = 6,
-		TUNING_31TET = 7
+		TUNING_31TET = 7,
+		TUNING_HARMONIC = 8,
+		TUNING_SYNCED = 9
 	};
 
 	TuningPresets tuningPreset = TuningPresets::TUNING_12TET;
@@ -298,18 +300,27 @@ struct VCOMH : Module {
 				break;
 		}
 	
-		int harm5_a = tuningPreset == TuningPresets::TUNING_THIRDCOMMA_MEANTONE ? 5 : 4;
-		int harm5_b = tuningPreset == TuningPresets::TUNING_THIRDCOMMA_MEANTONE ? 11 : 12;
-		params[RELFREQ1_PARAM].setValue(tuning.vecToFreqRatio({-2, -5}));
-		params[RELFREQ2_PARAM].setValue(tuning.vecToFreqRatio({1, 3}));
-		//
-		params[RELFREQ4_PARAM].setValue(tuning.vecToFreqRatio({2, 5}));
-		params[RELFREQ5_PARAM].setValue(tuning.vecToFreqRatio({3, 8}));
-		params[RELFREQ6_PARAM].setValue(tuning.vecToFreqRatio({4, 10}));
-		params[RELFREQ7_PARAM].setValue(tuning.vecToFreqRatio({harm5_a, harm5_b}));
-		params[RELFREQ8_PARAM].setValue(tuning.vecToFreqRatio({5, 13}));
-		params[RELFREQ9_PARAM].setValue(tuning.vecToFreqRatio({6, 15}));
-
+		if (tuningPreset == TuningPresets::TUNING_HARMONIC) {
+			params[RELFREQ1_PARAM].setValue(0.5f);
+			params[RELFREQ2_PARAM].setValue(1.5f);
+			params[RELFREQ4_PARAM].setValue(2.f);
+			params[RELFREQ5_PARAM].setValue(3.f);
+			params[RELFREQ6_PARAM].setValue(4.f);
+			params[RELFREQ7_PARAM].setValue(5.f);
+			params[RELFREQ8_PARAM].setValue(6.f);
+			params[RELFREQ9_PARAM].setValue(8.f);			
+		}else{
+			int harm5_a = tuningPreset == TuningPresets::TUNING_THIRDCOMMA_MEANTONE ? 5 : 4;
+			int harm5_b = tuningPreset == TuningPresets::TUNING_THIRDCOMMA_MEANTONE ? 11 : 12;
+			params[RELFREQ1_PARAM].setValue(tuning.vecToFreqRatio({-2, -5}));
+			params[RELFREQ2_PARAM].setValue(tuning.vecToFreqRatio({1, 3}));
+			params[RELFREQ4_PARAM].setValue(tuning.vecToFreqRatio({2, 5}));
+			params[RELFREQ5_PARAM].setValue(tuning.vecToFreqRatio({3, 8}));
+			params[RELFREQ6_PARAM].setValue(tuning.vecToFreqRatio({4, 10}));
+			params[RELFREQ7_PARAM].setValue(tuning.vecToFreqRatio({harm5_a, harm5_b}));
+			params[RELFREQ8_PARAM].setValue(tuning.vecToFreqRatio({5, 13}));
+			params[RELFREQ9_PARAM].setValue(tuning.vecToFreqRatio({6, 15}));
+		}
 	}
 
 	void process(const ProcessArgs& args) override {
@@ -379,7 +390,7 @@ struct VCOMH : Module {
 			}
 			// Set output
 			if (outputs[SIN_OUTPUT].isConnected())
-				outputs[SIN_OUTPUT].setVoltageSimd(signal, c);
+				outputs[SIN_OUTPUT].setVoltageSimd(.11111f * signal, c);
 
 		}
 
@@ -404,18 +415,27 @@ struct VCOMH : Module {
 			//tuningDataReceiver.getTuningData(&tuning, &scale);
 		}
 		if (onceASecDivider.process()) {
+
 			if (inputs[TUNING_DATA_INPUT].isConnected()) {
+				tuningPreset = TuningPresets::TUNING_SYNCED;
 				tuningDataReceiver.getTuningData(&tuning, &scale);
+
+
+
+				// TODO: Use scale to set params
+
+
 
 				params[RELFREQ1_PARAM].setValue(tuning.vecToFreqRatio(-scale.scale_class));
 				params[RELFREQ2_PARAM].setValue(tuning.vecToFreqRatio(tuning.V1()));
-				//
 				params[RELFREQ4_PARAM].setValue(tuning.vecToFreqRatio(scale.scale_class));
 				params[RELFREQ5_PARAM].setValue(tuning.vecToFreqRatio(tuning.V1()+scale.scale_class));
 				params[RELFREQ6_PARAM].setValue(tuning.vecToFreqRatio(scale.scale_class*2));
 				params[RELFREQ7_PARAM].setValue(tuning.vecToFreqRatio(tuning.V2()+scale.scale_class*2));
 				params[RELFREQ8_PARAM].setValue(tuning.vecToFreqRatio(tuning.V1()+scale.scale_class*2));
 				params[RELFREQ9_PARAM].setValue(tuning.vecToFreqRatio({3*scale.scale_class.x, 3*scale.scale_class.y}));
+
+
 			}
 		}
 		if (inputs[TUNING_DATA_INPUT].isConnected()) {
@@ -449,7 +469,10 @@ struct MHTuningDisplay: TuningDisplay {
 				module->tuningPreset == VCOMH::TuningPresets::TUNING_5LIMIT_CLEANTONE ? "5-limit (Cleantone)" :
 				module->tuningPreset == VCOMH::TuningPresets::TUNING_7LIMIT_CLEANTONE ? "7-limit (m3=7/6 P5=3/2)" :
 				module->tuningPreset == VCOMH::TuningPresets::TUNING_19TET ? "19-TET" :
-				module->tuningPreset == VCOMH::TuningPresets::TUNING_31TET ? "31-TET" : "Unknown";
+				module->tuningPreset == VCOMH::TuningPresets::TUNING_31TET ? "31-TET" :
+				module->tuningPreset == VCOMH::TuningPresets::TUNING_HARMONIC ? "Harmonic" :
+				module->tuningPreset == VCOMH::TuningPresets::TUNING_SYNCED ? "SYNC" : 
+				"Unknown";
 		}
 	};
 };
@@ -509,8 +532,8 @@ struct VCOMHWidget : ModuleWidget {
 				"5-limit (Cleantone)", 
 				"7-limit (m3=7/6 P5=3/2)",
 				"19-TET",
-				"31-TET"
-
+				"31-TET",
+				"Harmonic",
 			},
 			[=]() {
 				return module->getTuningPreset();

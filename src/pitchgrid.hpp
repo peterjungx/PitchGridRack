@@ -74,6 +74,8 @@ public:
 
 int IntegerGCD(int a, int b);
 
+
+
 struct RegularScale {
 	// a regular scale 
 
@@ -107,6 +109,53 @@ struct RegularScale {
 		return IntegerGCD(v.x, v.y) == 1;
 	}
 
+
+
 };
+
+/*
+
+struct RegularSubScale {
+	RegularScale base_scale = RegularScale({2,5}, 2);
+	std::vector<ScaleVector> scale_note_coords;
+
+	RegularSubScale(ScaleVector scale_class, int mode){
+		base_scale.setScaleClass(scale_class);
+		base_scale.mode = mode;
+		setScaleNoteCoords();
+	}
+	RegularSubScale(ScaleVector scale_class, int mode, std::vector<ScaleVector> scale_note_offsets){
+		base_scale.setScaleClass(scale_class);
+		base_scale.mode = mode;
+		ScaleVector last = {0,0};
+		for (ScaleVector c : scale_note_offsets){
+			last = last + c;
+			scale_note_coords.push_back(last);
+		}
+	}
+
+
+	
+	void setScaleNoteCoords(){
+		// empty the vector
+		scale_note_coords.clear();
+		for (int i=1; i<=base_scale.n; i++){
+			scale_note_coords.push_back(base_scale.scaleNoteSeqNrToCoord(i));
+		}
+	}
+
+	std::vector<ScaleVector> getScaleNoteOffsets(){
+		std::vector<ScaleVector> offsets;
+		ScaleVector last = {0,0};
+		for (ScaleVector c : scale_note_coords){
+			offsets.push_back(c - last);
+			last = c;
+		}
+		return offsets;
+	}
+
+};
+*/
+
 
 
