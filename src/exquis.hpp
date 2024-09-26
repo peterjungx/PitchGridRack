@@ -49,6 +49,10 @@ Color XQ_COLOR_CYAN = {0,127,127};
 Color XQ_COLOR_MAGENTA = {127,0,127};
 Color XQ_COLOR_BLACK = {0,0,0};
 
+Color XQ_COLOR_EXQUIS_YELLOW = {127,75,5};
+Color XQ_COLOR_EXQUIS_BLUE = {14,113,127};
+
+
 struct ExquisNote {
 	uint8_t noteId;
 	Color color;

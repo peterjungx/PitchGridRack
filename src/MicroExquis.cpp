@@ -49,20 +49,6 @@ struct MicroExquis : Module {
 		NUM_LIGHTS
 	};
 
-	enum class TuningPresets : int {
-		TUNING_12TET = 0,
-		TUNING_PYTHAGOREAN = 1,
-		TUNING_QUARTERCOMMA_MEANTONE = 2,
-		TUNING_THIRDCOMMA_MEANTONE = 3,
-		TUNING_HALFCOMMA_CLEANTONE = 4,
-		TUNING_7LIMIT_CLEANTONE = 5,
-		TUNING_19TET = 6,
-		TUNING_31TET = 7,
-		TUNING_EXQUIS = 8
-	};
-
-
-	TuningPresets tuningPreset = TuningPresets::TUNING_12TET;
 	ConsistentTuning tuning = ConsistentTuning({2, 5}, 2.f, {1, 3}, pow(2.f, 7.f/12.f)); // 12TET
 
 	std::string message = "-";
@@ -131,49 +117,7 @@ struct MicroExquis : Module {
 
 		exquis.tuning = &tuning;
 
-
 	}
-
-	int getTuningPreset() {
-		return static_cast<int>(tuningPreset);
-	}
-	void setTuningPreset(int t) {
-		tuningPreset = (TuningPresets)t;
-
-		switch (tuningPreset) {
-			case TuningPresets::TUNING_12TET:
-				//tuning.setParams({2, 5}, 2.f, {1, 0}, pow(2.f, 1.f/12.f));
-				tuning.setParams({1, 3}, pow(2.f, 7.f/12.f), {0, 2}, pow(2.f, 4.f/12.f));
-				break;
-			case TuningPresets::TUNING_PYTHAGOREAN:
-				//tuning.setParams({2, 5}, 2.f, {1, 3}, 3.f/2.f);
-				tuning.setParams({1, 3}, 3.f/2.f, {0, 2}, 81.f/64.f);
-				break;
-			case TuningPresets::TUNING_QUARTERCOMMA_MEANTONE:
-				//tuning.setParams({2, 5}, 2.f, {0, 2}, 5.f/4.f);
-				tuning.setParams({2, 5}, 2.f, {0, 2}, 5.f/4.f);
-				break;
-			case TuningPresets::TUNING_THIRDCOMMA_MEANTONE:
-				tuning.setParams({2, 5}, 2.f, {1, 1}, 6.f/5.f);
-				break;
-			case TuningPresets::TUNING_HALFCOMMA_CLEANTONE:
-				tuning.setParams({0, 2}, 5.f/4.f, {1, 3}, 3.f/2.f);
-				break;
-			case TuningPresets::TUNING_7LIMIT_CLEANTONE:
-				tuning.setParams({1, 1}, 7.f/6.f, {1, 3}, 3.f/2.f);
-				break;
-			case TuningPresets::TUNING_19TET:
-				tuning.setParams({2, 5}, 2.f, {1, 0}, pow(2.f, 2.f/19.f));
-				break;
-			case TuningPresets::TUNING_31TET:
-				tuning.setParams({2, 5}, 2.f, {1, 0}, pow(2.f, 3.f/31.f));
-				break;
-		}
-		setTuningInfoString();
-		exquis.didManualRetune = false;
-
-	}
-
 
 	void setParams(
 		int scaleStepsA, 
@@ -192,16 +136,14 @@ struct MicroExquis : Module {
 	void setTuningInfoString(){
 		
 		std::stringstream ss1;
-		ss1 << 
-			exquis.contFracDisplay(tuning.F1()) << 
-			" (" << std::fixed << std::setprecision(1) << 1200*log2(tuning.F1()) << "ct)";
-		tuning_info_string1 = "(" + std::to_string(tuning.V1().y) + "," + std::to_string(tuning.V1().x) + "):" + ss1.str();
+		ss1 << std::fixed << std::setprecision(1) << 1200*log2(tuning.F1()) << "ct"
+			<< " (" <<  exquis.contFracDisplay(tuning.F1()) << ")";
+		tuning_info_string1 = "(" + std::to_string(tuning.V1().y) + "," + std::to_string(tuning.V1().x) + ")=" + ss1.str();
 
 		std::stringstream ss2;
-		ss2 << 
-			exquis.contFracDisplay(tuning.F2()) << 
-			" (" << std::fixed << std::setprecision(1) << 1200*log2(tuning.F2()) << "ct)";
-		tuning_info_string2 = "(" + std::to_string(tuning.V2().y) + "," + std::to_string(tuning.V2().x) + "):" + ss2.str();
+		ss2 << std::fixed << std::setprecision(1) << 1200*log2(tuning.F2()) << "ct"
+			<< " (" <<  exquis.contFracDisplay(tuning.F2()) << ")";
+		tuning_info_string2 = "(" + std::to_string(tuning.V2().y) + "," + std::to_string(tuning.V2().x) + ")=" + ss2.str();
 
 	}
 
@@ -258,7 +200,7 @@ struct MicroExquis : Module {
 			}
 
 			if (exquis.didManualRetune){
-				tuningPreset = MicroExquis::TuningPresets::TUNING_EXQUIS;
+				//tuningPreset = MicroExquis::TuningPresets::TUNING_EXQUIS;
 				setTuningInfoString();
 				exquis.didManualRetune = false;
 			}
@@ -377,8 +319,8 @@ struct MicroExquis : Module {
 
 	json_t* dataToJson() override {
 		json_t* rootJ = json_object();
-		int tuningPreset = getTuningPreset();
-		json_object_set_new(rootJ, "tuningPreset", json_integer(tuningPreset));
+		//int tuningPreset = getTuningPreset();
+		//json_object_set_new(rootJ, "tuningPreset", json_integer(tuningPreset));
 
 		json_t* tuningJ = json_object();
 		json_object_set_new(rootJ, "tuning", tuningJ);
@@ -424,11 +366,11 @@ struct MicroExquis : Module {
 
 	void dataFromJson(json_t* rootJ) override {
 
-		json_t* tuningPresetJ = json_object_get(rootJ, "tuningPreset");
-		if (tuningPresetJ){
-			int tuningPreset = json_integer_value(tuningPresetJ);
-			setTuningPreset(tuningPreset);
-		}
+		//json_t* tuningPresetJ = json_object_get(rootJ, "tuningPreset");
+		//if (tuningPresetJ){
+		//	int tuningPreset = json_integer_value(tuningPresetJ);
+		//	setTuningPreset(tuningPreset);
+		//}
 		json_t* tuningJ = json_object_get(rootJ, "tuning");
 		if (tuningJ){
 			json_t* vec1J = json_object_get(tuningJ, "vec1");
@@ -513,21 +455,9 @@ struct MicroExquisDisplay: ExquisDisplay {
 	void step() override {
 		if (module){
 			text1 = module->message;
-			text2 = "Scale: MOS(" + std::to_string(module->exquis.scaleMapper.scale.scale_class.y) + "," + std::to_string(module->exquis.scaleMapper.scale.scale_class.x) + ") m" + std::to_string(module->exquis.scaleMapper.scale.mode+1);
+			text2 = "Scale: MOS(" + std::to_string(module->exquis.scaleMapper.scale.scale_class.y) + "," + std::to_string(module->exquis.scaleMapper.scale.scale_class.x) + ") mode=c" + std::to_string(module->exquis.scaleMapper.scale.mode+1);
 			text3 = module->tuning_info_string1;
 			text4 = module->tuning_info_string2;
-
-			//text3 = module->tuningPreset == MicroExquis::TuningPresets::TUNING_12TET ? "12-TET" :
-			//	module->tuningPreset == MicroExquis::TuningPresets::TUNING_PYTHAGOREAN ? "Pythagorean" :
-			//	module->tuningPreset == MicroExquis::TuningPresets::TUNING_QUARTERCOMMA_MEANTONE ? "1/4-comma Meantone" :
-			//	module->tuningPreset == MicroExquis::TuningPresets::TUNING_THIRDCOMMA_MEANTONE ? "1/3-comma Meantone" :
-			//	module->tuningPreset == MicroExquis::TuningPresets::TUNING_HALFCOMMA_CLEANTONE ? "1/2-comma Cleantone" :
-			//	module->tuningPreset == MicroExquis::TuningPresets::TUNING_7LIMIT_CLEANTONE ? "7-limit (m3=7/6 P5=3/2)" :
-			//	module->tuningPreset == MicroExquis::TuningPresets::TUNING_19TET ? "19-TET" :
-			//	module->tuningPreset == MicroExquis::TuningPresets::TUNING_31TET ? "31-TET" : 
-			//	module->tuningPreset == MicroExquis::TuningPresets::TUNING_EXQUIS ? module->tuning_info_string : 
-			//	"Unknown";
-			
 			std::stringstream ss;
 			ss << "Base: " 
 				<< std::fixed << std::setprecision(3) 
@@ -573,31 +503,6 @@ struct MicroExquisWidget : ModuleWidget {
 
 	}
 
-	void appendContextMenu(Menu* menu) override {
-		MicroExquis* module = getModule<MicroExquis>();
-		assert(module);
-
-		menu->addChild(new MenuSeparator);
-
-		menu->addChild(createIndexSubmenuItem("Tuning",
-			{
-				"12-TET", 
-				"Pythagorean",
-				"1/4-comma Meantone", 
-				"1/3-comma Meantone", 
-				"5-limit (Cleantone)", 
-				"7-limit (m3=7/6 P5=3/2)",
-				"19-TET",
-				"31-TET"
-			},
-			[=]() {
-				return module->getTuningPreset();
-			},
-			[=](int tuning) {
-				module->setTuningPreset(tuning);
-			}
-		));
-	}
 };
 
 

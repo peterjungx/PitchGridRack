@@ -4,6 +4,7 @@ FLAGS += -Idep/include
 SOURCES += $(wildcard src/*.cpp)
 SOURCES += $(wildcard src/*.c)
 DISTRIBUTABLES += res
+DISTRIBUTABLES += presets
 DISTRIBUTABLES += $(wildcard LICENSE*)
 DISTRIBUTABLES += $(wildcard presets)
 
