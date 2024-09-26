@@ -72,6 +72,7 @@ struct DigitalFourlineDisplay : Widget {
 	std::string text2;
 	std::string text3;
 	std::string text4;
+	std::string text5;
 	float fontSize;
 	NVGcolor bgColor = nvgRGB(0x46,0x46, 0x46);
 	NVGcolor fgColor = SCHEME_YELLOW;
@@ -79,6 +80,7 @@ struct DigitalFourlineDisplay : Widget {
 	Vec textPos2;
 	Vec textPos3;
 	Vec textPos4;
+	Vec textPos5;
 
 	void prepareFont(const DrawArgs& args) {
 		// Get font
@@ -119,6 +121,7 @@ struct DigitalFourlineDisplay : Widget {
 			nvgText(args.vg, textPos2.x, textPos2.y, text2.c_str(), NULL);
 			nvgText(args.vg, textPos3.x, textPos3.y, text3.c_str(), NULL);
 			nvgText(args.vg, textPos4.x, textPos4.y, text4.c_str(), NULL);
+			nvgText(args.vg, textPos5.x, textPos5.y, text5.c_str(), NULL);
 		}
 		Widget::drawLayer(args, layer);
 	}
@@ -131,6 +134,7 @@ struct ExquisDisplay : DigitalFourlineDisplay {
 		textPos2 = Vec(5, 22);
 		textPos3 = Vec(5, 36);
 		textPos4 = Vec(5, 50);
+		textPos5 = Vec(5, 64);
 		fontSize = 14;
 	}
 };

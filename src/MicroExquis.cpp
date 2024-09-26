@@ -11,6 +11,7 @@ to explore
 
 */
 
+#include <iomanip>
 
 #include "plugin.hpp"
 #include "midi.hpp"
@@ -101,7 +102,8 @@ struct MicroExquis : Module {
 
 	bool initialized = false;
 
-	std::string tuning_info_string = "manual tuning";
+	std::string tuning_info_string1 = "";
+	std::string tuning_info_string2 = "";
 
 	TuningDataSender tuningDataSender = TuningDataSender();
 
@@ -167,6 +169,7 @@ struct MicroExquis : Module {
 				tuning.setParams({2, 5}, 2.f, {1, 0}, pow(2.f, 3.f/31.f));
 				break;
 		}
+		setTuningInfoString();
 		exquis.didManualRetune = false;
 
 	}
@@ -187,12 +190,20 @@ struct MicroExquis : Module {
 	}
 
 	void setTuningInfoString(){
-		tuning_info_string = "(" + std::to_string(tuning.V1().x) + "," + std::to_string(tuning.V1().y) + ")=" 
-							+ std::to_string(int(1200*log2(tuning.F1())+0.5f)) 
-							+ "ct (" + std::to_string(tuning.V2().x) + "," + std::to_string(tuning.V2().y) + ")="
-							+ std::to_string(int(1200*log2(tuning.F2())+0.5f)) + "ct";
-	}
+		
+		std::stringstream ss1;
+		ss1 << 
+			exquis.contFracDisplay(tuning.F1()) << 
+			" (" << std::fixed << std::setprecision(1) << 1200*log2(tuning.F1()) << "ct)";
+		tuning_info_string1 = "(" + std::to_string(tuning.V1().y) + "," + std::to_string(tuning.V1().x) + "):" + ss1.str();
 
+		std::stringstream ss2;
+		ss2 << 
+			exquis.contFracDisplay(tuning.F2()) << 
+			" (" << std::fixed << std::setprecision(1) << 1200*log2(tuning.F2()) << "ct)";
+		tuning_info_string2 = "(" + std::to_string(tuning.V2().y) + "," + std::to_string(tuning.V2().x) + "):" + ss2.str();
+
+	}
 
 	void process(const ProcessArgs& args) override {
 		//float fmParam = params[FM_PARAM].getValue();
@@ -382,6 +393,7 @@ struct MicroExquis : Module {
 		json_object_set_new(tuningJ, "f1", json_real(tuning.F1()));
 		json_object_set_new(tuningJ, "vec2", vec2J);
 		json_object_set_new(tuningJ, "f2", json_real(tuning.F2()));
+		json_object_set_new(tuningJ, "offset", json_real(tuning.Offset()));
 
 		json_t* scaleJ = json_object();
 		json_object_set_new(rootJ, "scale", scaleJ);
@@ -423,12 +435,13 @@ struct MicroExquis : Module {
 			json_t* f1J = json_object_get(tuningJ, "f1");
 			json_t* vec2J = json_object_get(tuningJ, "vec2");
 			json_t* f2J = json_object_get(tuningJ, "f2");
+			json_t* offsetJ = json_object_get(tuningJ, "offset");
 
 			if (
 				vec1J && json_is_array(vec1J) && json_array_size(vec1J) == 2 && json_is_integer(json_array_get(vec1J, 0)) && json_is_integer(json_array_get(vec1J, 1)) &&
 				f1J && json_is_number(f1J) &&
 				vec2J && json_is_array(vec2J) && json_array_size(vec2J) == 2 && json_is_integer(json_array_get(vec2J, 0)) && json_is_integer(json_array_get(vec2J, 1)) &&
-				f2J && json_is_number(f2J)
+				f2J && json_is_number(f2J) 
 			){
 				int v1x = json_integer_value(json_array_get(vec1J, 0));
 				int v1y = json_integer_value(json_array_get(vec1J, 1));
@@ -437,7 +450,13 @@ struct MicroExquis : Module {
 				int v2y = json_integer_value(json_array_get(vec2J, 1));
 				float f2 = json_number_value(f2J);
 				tuning.setParams({v1x, v1y}, f1, {v2x, v2y}, f2);
+				setTuningInfoString();
 				INFO("Tuning loaded: %d %d %f %d %d %f", v1x, v1y, f1, v2x, v2y, f2);
+			}
+			if (offsetJ && json_is_number(offsetJ)){
+				float offset = json_number_value(offsetJ);
+				tuning.setOffset(offset);
+				INFO("Tuning offset loaded: %f", offset);
 			}
 		}
 		json_t* scaleJ = json_object_get(rootJ, "scale");
@@ -492,22 +511,33 @@ struct MicroExquis : Module {
 struct MicroExquisDisplay: ExquisDisplay {
 	MicroExquis* module;
 	void step() override {
-		text1 = module->message;
-		text2 = "12-TET";
-		if(module){
-			text2 = module->tuningPreset == MicroExquis::TuningPresets::TUNING_12TET ? "12-TET" :
-				module->tuningPreset == MicroExquis::TuningPresets::TUNING_PYTHAGOREAN ? "Pythagorean" :
-				module->tuningPreset == MicroExquis::TuningPresets::TUNING_QUARTERCOMMA_MEANTONE ? "1/4-comma Meantone" :
-				module->tuningPreset == MicroExquis::TuningPresets::TUNING_THIRDCOMMA_MEANTONE ? "1/3-comma Meantone" :
-				module->tuningPreset == MicroExquis::TuningPresets::TUNING_HALFCOMMA_CLEANTONE ? "1/2-comma Cleantone" :
-				module->tuningPreset == MicroExquis::TuningPresets::TUNING_7LIMIT_CLEANTONE ? "7-limit (m3=7/6 P5=3/2)" :
-				module->tuningPreset == MicroExquis::TuningPresets::TUNING_19TET ? "19-TET" :
-				module->tuningPreset == MicroExquis::TuningPresets::TUNING_31TET ? "31-TET" : 
-				module->tuningPreset == MicroExquis::TuningPresets::TUNING_EXQUIS ? module->tuning_info_string : 
-				"Unknown";
+		if (module){
+			text1 = module->message;
+			text2 = "Scale: MOS(" + std::to_string(module->exquis.scaleMapper.scale.scale_class.y) + "," + std::to_string(module->exquis.scaleMapper.scale.scale_class.x) + ") m" + std::to_string(module->exquis.scaleMapper.scale.mode+1);
+			text3 = module->tuning_info_string1;
+			text4 = module->tuning_info_string2;
+
+			//text3 = module->tuningPreset == MicroExquis::TuningPresets::TUNING_12TET ? "12-TET" :
+			//	module->tuningPreset == MicroExquis::TuningPresets::TUNING_PYTHAGOREAN ? "Pythagorean" :
+			//	module->tuningPreset == MicroExquis::TuningPresets::TUNING_QUARTERCOMMA_MEANTONE ? "1/4-comma Meantone" :
+			//	module->tuningPreset == MicroExquis::TuningPresets::TUNING_THIRDCOMMA_MEANTONE ? "1/3-comma Meantone" :
+			//	module->tuningPreset == MicroExquis::TuningPresets::TUNING_HALFCOMMA_CLEANTONE ? "1/2-comma Cleantone" :
+			//	module->tuningPreset == MicroExquis::TuningPresets::TUNING_7LIMIT_CLEANTONE ? "7-limit (m3=7/6 P5=3/2)" :
+			//	module->tuningPreset == MicroExquis::TuningPresets::TUNING_19TET ? "19-TET" :
+			//	module->tuningPreset == MicroExquis::TuningPresets::TUNING_31TET ? "31-TET" : 
+			//	module->tuningPreset == MicroExquis::TuningPresets::TUNING_EXQUIS ? module->tuning_info_string : 
+			//	"Unknown";
+			
+			std::stringstream ss;
+			ss << "Base: " 
+				<< std::fixed << std::setprecision(3) 
+				<< module->tuning.Offset()
+				<< "V "
+				<< std::setprecision(2) 
+				<< module->tuning.OffsetAsStandardFreq()
+				<< "Hz";
+			text5 = ss.str();
 		}
-		text3 = "line 3";
-		text4 = "line 4";
 	};
 };
 
@@ -536,8 +566,8 @@ struct MicroExquisWidget : ModuleWidget {
 		addOutput(createOutputCentered<ThemedPJ301MPort>(mm2px(Vec(39.15, 113.115)), module, MicroExquis::MVOCT_OUTPUT));
 		addOutput(createOutputCentered<ThemedPJ301MPort>(mm2px(Vec(39.15, 96.859)), module, MicroExquis::TUNING_DATA_OUTPUT));
 
-		MicroExquisDisplay* display = createWidget<MicroExquisDisplay>(mm2px(Vec(2.0, 67.0)));
-		display->box.size = mm2px(Vec(42, 20));
+		MicroExquisDisplay* display = createWidget<MicroExquisDisplay>(mm2px(Vec(2.0, 62.0)));
+		display->box.size = mm2px(Vec(42, 25));
 		display->module = module;
 		addChild(display);
 

@@ -66,6 +66,9 @@ public:
 	float Offset(){
 		return offset;
 	};
+	float OffsetAsStandardFreq(){
+		return 440.0 * pow(2.f, -9./12.) * pow(2.f, offset); // 0 Volt = C4
+	};
 	void setOffset(float offset){
 		//std::lock_guard<std::mutex> guard(consistent_tuning_offset_mutex);
 		this->offset = offset;
@@ -95,13 +98,13 @@ struct RegularScale {
 		}
 	}
 	ScaleVector scaleNoteSeqNrToCoord(int seqNr){
-		int x = (int)(scale_class.x * seqNr - 1.f * mode / n - .5f);
-		int y = (int)(scale_class.y * seqNr + 1.f * mode / n + .5f);
+		int x = (int)(scale_class.x * seqNr - 1.f * (n-(mode+1)) / n - .5f);
+		int y = (int)(scale_class.y * seqNr + 1.f * (n-(mode+1)) / n + .5f);
 		return {x, y};
 	}
 	int coordToScaleNoteSeqNr(ScaleVector c){
-		int d = c.x*scale_class.y - c.y*scale_class.x  + mode;
-		return d<0? -1 : d>=n? -1 : (d+ n-mode ) % n;
+		int d = c.x * scale_class.y - c.y * scale_class.x + (n-(mode+1)) ;
+		return d<0 ? -1 : d>=n ? -1 : (d + mode + 1) % n;
 	}
 
 

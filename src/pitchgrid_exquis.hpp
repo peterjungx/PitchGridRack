@@ -1,3 +1,5 @@
+#include <iomanip>
+
 #include "pitchgrid.hpp"
 #include "exquis.hpp"
 #include "continuedFraction.hpp"
@@ -123,8 +125,6 @@ struct PitchGridExquis: Exquis {
 	enum ColorScheme {
 		COLORSCHEME_SCALE_MONOCHROME = 0,
 		COLORSCHEME_SCALE_COLOR_CIRCLE,
-		COLORSCHEME_PITCH_MONOCHROME,
-		COLORSCHEME_PITCH_COLOR_CIRCLE,
 		NUM_COLORSCHEMES
 	};
 	ColorScheme colorScheme = COLORSCHEME_SCALE_MONOCHROME;
@@ -193,30 +193,6 @@ struct PitchGridExquis: Exquis {
 					//	(uint8_t)(63+63*sin2pi_pade_05_5_4(posfmod(r+.75f, 1.f)))
 					//};
 					//note.brightness = note.scaleSeqNr == -1? 0.f : 1.f;
-					break;
-				case COLORSCHEME_PITCH_MONOCHROME:
-
-					note.color = note.scaleSeqNr == 0 ? XQ_COLOR_WHITE : XQ_COLOR_MAGENTA;
-					if (note.scaleSeqNr != -1){
-						r = tuning->vecToVoltage(note.scaleCoord);
-						note.brightness = pow(8.f, - posfmod(r+.001f, 1.f));
-					}else{
-						note.brightness = 0.f;
-					}
-					break;
-				case COLORSCHEME_PITCH_COLOR_CIRCLE:
-					if (note.scaleSeqNr != -1){
-						note.brightness = 1.f;
-						r = tuning->vecToVoltage(note.scaleCoord);
-						note.color = {
-							(uint8_t)(63+63*sin2pi_pade_05_5_4(posfmod(r+.25f, 1.f))),
-							(uint8_t)(32+32*sin2pi_pade_05_5_4(posfmod(r+.25f+.333f, 1.f))),
-							(uint8_t)(63+63*sin2pi_pade_05_5_4(posfmod(r+.25f+.667f, 1.f)))
-						};
-					}else{
-						note.color = XQ_COLOR_BLACK;
-						note.brightness = 0.f;
-					}
 					break;
 				
 			}
@@ -360,6 +336,18 @@ struct PitchGridExquis: Exquis {
 			didManualRetune = true;
 
 		}
+	}
+
+	std::string contFracDisplay(float f){
+		Fraction approx = closestRational(f, 2*scaleMapper.scale.n);
+		std::stringstream ss;
+		ss << approx.numerator << "/" << approx.denominator;
+		float error_ct = 1200*log2(f / approx.toFloat());
+		if (fabs(error_ct)>0.1){
+			if (error_ct > 0) ss << "+";
+			ss << std::fixed << std::setprecision(1) << error_ct << "ct";
+		}
+		return ss.str();
 	}
 
 
