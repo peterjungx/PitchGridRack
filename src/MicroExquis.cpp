@@ -53,7 +53,7 @@ struct MicroExquis : Module {
 		TUNING_PYTHAGOREAN = 1,
 		TUNING_QUARTERCOMMA_MEANTONE = 2,
 		TUNING_THIRDCOMMA_MEANTONE = 3,
-		TUNING_5LIMIT_CLEANTONE = 4,
+		TUNING_HALFCOMMA_CLEANTONE = 4,
 		TUNING_7LIMIT_CLEANTONE = 5,
 		TUNING_19TET = 6,
 		TUNING_31TET = 7,
@@ -129,7 +129,6 @@ struct MicroExquis : Module {
 
 		exquis.tuning = &tuning;
 
-		
 
 	}
 
@@ -141,21 +140,21 @@ struct MicroExquis : Module {
 
 		switch (tuningPreset) {
 			case TuningPresets::TUNING_12TET:
-				tuning.setParams({2, 5}, 2.f, {1, 0}, pow(2.f, 1.f/12.f));
-				//tuning.setParams({1, 3}, pow(2.f, 7.f/12.f), {0, 2}, pow(2.f, 4.f/12.f));
+				//tuning.setParams({2, 5}, 2.f, {1, 0}, pow(2.f, 1.f/12.f));
+				tuning.setParams({1, 3}, pow(2.f, 7.f/12.f), {0, 2}, pow(2.f, 4.f/12.f));
 				break;
 			case TuningPresets::TUNING_PYTHAGOREAN:
-				tuning.setParams({2, 5}, 2.f, {1, 3}, 3.f/2.f);
-				//tuning.setParams({1, 3}, 3.f/2.f, {0, 2}, 81.f/64.f);
+				//tuning.setParams({2, 5}, 2.f, {1, 3}, 3.f/2.f);
+				tuning.setParams({1, 3}, 3.f/2.f, {0, 2}, 81.f/64.f);
 				break;
 			case TuningPresets::TUNING_QUARTERCOMMA_MEANTONE:
-				tuning.setParams({2, 5}, 2.f, {0, 2}, 5.f/4.f);
 				//tuning.setParams({2, 5}, 2.f, {0, 2}, 5.f/4.f);
+				tuning.setParams({2, 5}, 2.f, {0, 2}, 5.f/4.f);
 				break;
 			case TuningPresets::TUNING_THIRDCOMMA_MEANTONE:
 				tuning.setParams({2, 5}, 2.f, {1, 1}, 6.f/5.f);
 				break;
-			case TuningPresets::TUNING_5LIMIT_CLEANTONE:
+			case TuningPresets::TUNING_HALFCOMMA_CLEANTONE:
 				tuning.setParams({0, 2}, 5.f/4.f, {1, 3}, 3.f/2.f);
 				break;
 			case TuningPresets::TUNING_7LIMIT_CLEANTONE:
@@ -369,6 +368,45 @@ struct MicroExquis : Module {
 		json_t* rootJ = json_object();
 		int tuningPreset = getTuningPreset();
 		json_object_set_new(rootJ, "tuningPreset", json_integer(tuningPreset));
+
+		json_t* tuningJ = json_object();
+		json_object_set_new(rootJ, "tuning", tuningJ);
+		json_t* vec1J = json_array();
+		json_array_append_new(vec1J, json_integer(tuning.V1().x));
+		json_array_append_new(vec1J, json_integer(tuning.V1().y));
+		json_t* vec2J = json_array();
+		json_array_append_new(vec2J, json_integer(tuning.V2().x));
+		json_array_append_new(vec2J, json_integer(tuning.V2().y));
+
+		json_object_set_new(tuningJ, "vec1", vec1J);
+		json_object_set_new(tuningJ, "f1", json_real(tuning.F1()));
+		json_object_set_new(tuningJ, "vec2", vec2J);
+		json_object_set_new(tuningJ, "f2", json_real(tuning.F2()));
+
+		json_t* scaleJ = json_object();
+		json_object_set_new(rootJ, "scale", scaleJ);
+		json_t* scaleClassJ = json_array();
+		json_array_append_new(scaleClassJ, json_integer(exquis.scaleMapper.scale.scale_class.x));
+		json_array_append_new(scaleClassJ, json_integer(exquis.scaleMapper.scale.scale_class.y));
+		json_object_set_new(scaleJ, "class", scaleClassJ);
+		json_object_set_new(scaleJ, "mode", json_integer(exquis.scaleMapper.scale.mode));
+
+		json_t* layoutJ = json_object();
+		json_object_set_new(rootJ, "layout", layoutJ);
+		json_t* layoutBaseJ = json_array();
+		json_array_append_new(layoutBaseJ, json_integer(exquis.scaleMapper.exquis_base.x));
+		json_array_append_new(layoutBaseJ, json_integer(exquis.scaleMapper.exquis_base.y));
+		json_t* layoutInterval1J = json_array();
+		json_array_append_new(layoutInterval1J, json_integer(exquis.scaleMapper.exquis_interval1.x));
+		json_array_append_new(layoutInterval1J, json_integer(exquis.scaleMapper.exquis_interval1.y));
+		json_t* layoutInterval2J = json_array();
+		json_array_append_new(layoutInterval2J, json_integer(exquis.scaleMapper.exquis_interval2.x));
+		json_array_append_new(layoutInterval2J, json_integer(exquis.scaleMapper.exquis_interval2.y));
+
+		json_object_set_new(layoutJ, "base", layoutBaseJ);
+		json_object_set_new(layoutJ, "interval1", layoutInterval1J);
+		json_object_set_new(layoutJ, "interval2", layoutInterval2J);
+
 		return rootJ;
 	}
 
@@ -379,6 +417,74 @@ struct MicroExquis : Module {
 			int tuningPreset = json_integer_value(tuningPresetJ);
 			setTuningPreset(tuningPreset);
 		}
+		json_t* tuningJ = json_object_get(rootJ, "tuning");
+		if (tuningJ){
+			json_t* vec1J = json_object_get(tuningJ, "vec1");
+			json_t* f1J = json_object_get(tuningJ, "f1");
+			json_t* vec2J = json_object_get(tuningJ, "vec2");
+			json_t* f2J = json_object_get(tuningJ, "f2");
+
+			if (
+				vec1J && json_is_array(vec1J) && json_array_size(vec1J) == 2 && json_is_integer(json_array_get(vec1J, 0)) && json_is_integer(json_array_get(vec1J, 1)) &&
+				f1J && json_is_number(f1J) &&
+				vec2J && json_is_array(vec2J) && json_array_size(vec2J) == 2 && json_is_integer(json_array_get(vec2J, 0)) && json_is_integer(json_array_get(vec2J, 1)) &&
+				f2J && json_is_number(f2J)
+			){
+				int v1x = json_integer_value(json_array_get(vec1J, 0));
+				int v1y = json_integer_value(json_array_get(vec1J, 1));
+				float f1 = json_number_value(f1J);
+				int v2x = json_integer_value(json_array_get(vec2J, 0));
+				int v2y = json_integer_value(json_array_get(vec2J, 1));
+				float f2 = json_number_value(f2J);
+				tuning.setParams({v1x, v1y}, f1, {v2x, v2y}, f2);
+				INFO("Tuning loaded: %d %d %f %d %d %f", v1x, v1y, f1, v2x, v2y, f2);
+			}
+		}
+		json_t* scaleJ = json_object_get(rootJ, "scale");
+		if (scaleJ && json_is_object(scaleJ)){
+			json_t* scaleClassJ = json_object_get(scaleJ, "class");
+			json_t* modeJ = json_object_get(scaleJ, "mode");
+			if (
+				scaleClassJ && json_is_array(scaleClassJ) && json_array_size(scaleClassJ) == 2 && 
+				json_is_integer(json_array_get(scaleClassJ, 0)) && json_is_integer(json_array_get(scaleClassJ, 1)) && 
+				modeJ && json_is_integer(modeJ)
+			){
+				int x = json_integer_value(json_array_get(scaleClassJ, 0));
+				int y = json_integer_value(json_array_get(scaleClassJ, 1));
+				int mode = json_integer_value(modeJ);
+				exquis.scaleMapper.scale.setScaleClass({x, y});
+				exquis.scaleMapper.scale.mode = mode;
+				INFO("Scale loaded: %d %d %d", x, y, mode);
+			}
+		}
+
+		json_t* layoutJ = json_object_get(rootJ, "layout");
+		if (layoutJ && json_is_object(layoutJ)){
+			json_t* layoutBaseJ = json_object_get(layoutJ, "base");
+			json_t* layoutInterval1J = json_object_get(layoutJ, "interval1");
+			json_t* layoutInterval2J = json_object_get(layoutJ, "interval2");
+			if (
+				layoutBaseJ && json_is_array(layoutBaseJ) && json_array_size(layoutBaseJ) == 2 && 
+				json_is_integer(json_array_get(layoutBaseJ, 0)) && json_is_integer(json_array_get(layoutBaseJ, 1)) && 
+				layoutInterval1J && json_is_array(layoutInterval1J) && json_array_size(layoutInterval1J) == 2 && 
+				json_is_integer(json_array_get(layoutInterval1J, 0)) && json_is_integer(json_array_get(layoutInterval1J, 1)) && 
+				layoutInterval2J && json_is_array(layoutInterval2J) && json_array_size(layoutInterval2J) == 2 && 
+				json_is_integer(json_array_get(layoutInterval2J, 0)) && json_is_integer(json_array_get(layoutInterval2J, 1))
+			){
+				int baseX = json_integer_value(json_array_get(layoutBaseJ, 0));
+				int baseY = json_integer_value(json_array_get(layoutBaseJ, 1));
+				int interval1X = json_integer_value(json_array_get(layoutInterval1J, 0));
+				int interval1Y = json_integer_value(json_array_get(layoutInterval1J, 1));
+				int interval2X = json_integer_value(json_array_get(layoutInterval2J, 0));
+				int interval2Y = json_integer_value(json_array_get(layoutInterval2J, 1));
+				exquis.scaleMapper.exquis_base = {baseX, baseY};
+				exquis.scaleMapper.exquis_interval1 = {interval1X, interval1Y};
+				exquis.scaleMapper.exquis_interval2 = {interval2X, interval2Y};
+				exquis.scaleMapper.calcTransforms();
+				INFO("Layout loaded: %d %d %d %d %d %d", baseX, baseY, interval1X, interval1Y, interval2X, interval2Y);
+			}
+		}
+		exquis.showAllOctavesLayer();
 	}
 
 };
@@ -393,7 +499,7 @@ struct MicroExquisDisplay: ExquisDisplay {
 				module->tuningPreset == MicroExquis::TuningPresets::TUNING_PYTHAGOREAN ? "Pythagorean" :
 				module->tuningPreset == MicroExquis::TuningPresets::TUNING_QUARTERCOMMA_MEANTONE ? "1/4-comma Meantone" :
 				module->tuningPreset == MicroExquis::TuningPresets::TUNING_THIRDCOMMA_MEANTONE ? "1/3-comma Meantone" :
-				module->tuningPreset == MicroExquis::TuningPresets::TUNING_5LIMIT_CLEANTONE ? "5-limit (Cleantone)" :
+				module->tuningPreset == MicroExquis::TuningPresets::TUNING_HALFCOMMA_CLEANTONE ? "1/2-comma Cleantone" :
 				module->tuningPreset == MicroExquis::TuningPresets::TUNING_7LIMIT_CLEANTONE ? "7-limit (m3=7/6 P5=3/2)" :
 				module->tuningPreset == MicroExquis::TuningPresets::TUNING_19TET ? "19-TET" :
 				module->tuningPreset == MicroExquis::TuningPresets::TUNING_31TET ? "31-TET" : 

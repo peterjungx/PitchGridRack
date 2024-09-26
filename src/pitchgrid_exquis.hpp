@@ -27,11 +27,6 @@ struct ExquisScaleMapper {
 
 
 	}
-	void setScale(RegularScale scale){
-		this->scale = scale;
-		this->scale_interval1 = scale.scale_class;
-		calcTransforms();
-	}
 	ScaleVector exquis2scale(ExquisVector c){
 		return transform_e2s * c;
 	}

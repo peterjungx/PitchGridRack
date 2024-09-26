@@ -155,7 +155,6 @@ struct Exquis {
 
     ExquisBreathingNote tuningRetuneNote;
     ExquisBreathingNote tuningConstantNote;
-
     ExquisBreathingNote selectedScaleNote;
 
 	

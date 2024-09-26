@@ -64,7 +64,7 @@ struct VOctMapper : Module {
 		TUNING_PYTHAGOREAN = 1,
 		TUNING_QUARTERCOMMA_MEANTONE = 2,
 		TUNING_THIRDCOMMA_MEANTONE = 3,
-		TUNING_5LIMIT_CLEANTONE = 4,
+		TUNING_HALFCOMMA_CLEANTONE = 4,
 		TUNING_7LIMIT_CLEANTONE = 5,
 		TUNING_19TET = 6,
 		TUNING_31TET = 7,
@@ -140,7 +140,7 @@ struct VOctMapper : Module {
 			case TuningPresets::TUNING_THIRDCOMMA_MEANTONE:
 				tuning.setParams(2, 5, 2.f, 1, 1, 6.f/5.f);
 				break;
-			case TuningPresets::TUNING_5LIMIT_CLEANTONE:
+			case TuningPresets::TUNING_HALFCOMMA_CLEANTONE:
 				tuning.setParams(0, 2, 5.f/4.f, 1, 3, 3.f/2.f);
 				break;
 			case TuningPresets::TUNING_7LIMIT_CLEANTONE:
@@ -224,7 +224,7 @@ struct VOctTuningDisplay: TuningDisplay {
 				module->tuningPreset == VOctMapper::TuningPresets::TUNING_PYTHAGOREAN ? "Pythagorean" :
 				module->tuningPreset == VOctMapper::TuningPresets::TUNING_QUARTERCOMMA_MEANTONE ? "1/4-comma Meantone" :
 				module->tuningPreset == VOctMapper::TuningPresets::TUNING_THIRDCOMMA_MEANTONE ? "1/3-comma Meantone" :
-				module->tuningPreset == VOctMapper::TuningPresets::TUNING_5LIMIT_CLEANTONE ? "5-limit (Cleantone)" :
+				module->tuningPreset == VOctMapper::TuningPresets::TUNING_HALFCOMMA_CLEANTONE ? "1/2-comma Cleantone" :
 				module->tuningPreset == VOctMapper::TuningPresets::TUNING_7LIMIT_CLEANTONE ? "7-limit (m3=7/6 P5=3/2)" :
 				module->tuningPreset == VOctMapper::TuningPresets::TUNING_19TET ? "19-TET" :
 				module->tuningPreset == VOctMapper::TuningPresets::TUNING_31TET ? "31-TET" : "Unknown";
