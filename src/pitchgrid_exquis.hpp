@@ -324,7 +324,6 @@ struct PitchGridExquis: Exquis {
 	}
 
 	void justifyTuning(){
-		INFO("justifyTuning");
 		if (tuningModeOn && tuningConstantNoteSelected){
 			// tune selected note to a close just interval while keeping the other note constant
 			float f = tuning->vecToFreqRatioNoOffset( tuningModeRetuneInterval );
@@ -337,6 +336,17 @@ struct PitchGridExquis: Exquis {
 
 		}
 	}
+	void setTuning(){
+		if (tuningModeOn && tuningConstantNoteSelected){
+			// tune selected note to a close just interval while keeping the other note constant
+			float f = tuning->vecToFreqRatioNoOffset( tuningModeRetuneInterval );
+			tuning->setParams(tuningModeRetuneInterval, f, tuningModeConstantInterval, tuning->vecToFreqRatioNoOffset(tuningModeConstantInterval));
+
+			didManualRetune = true;
+
+		}
+	}
+
 
 	std::string contFracDisplay(float f){
 		Fraction approx = closestRational(f, 2*scaleMapper.scale.n);
@@ -382,9 +392,17 @@ struct PitchGridExquis: Exquis {
 							}
 							break;
 						case 10: // rotate color scheme 
-							if (value == 1){
-								colorScheme = (ColorScheme)((colorScheme + 1) % NUM_COLORSCHEMES);
-								showAllOctavesLayer();
+							if (tuningModeOn){
+								if (value == 1){
+									justifyTuning();
+								}
+							}
+							break;
+						case 11:
+							if (tuningModeOn){
+								if (value == 1){
+									setTuning();
+								}
 							}
 							break;
 						case 12: // flip horizontally
@@ -401,9 +419,10 @@ struct PitchGridExquis: Exquis {
 									scaleMapper.flipVertically();
 									showSingleOctaveLayer();
 								}
-							}else if (tuningModeOn){
+							} else { 
 								if (value == 1){
-									justifyTuning();
+									colorScheme = (ColorScheme)((colorScheme + 1) % NUM_COLORSCHEMES);
+									showAllOctavesLayer();
 								}
 							}
 							break;
