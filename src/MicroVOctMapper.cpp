@@ -325,7 +325,7 @@ struct VOctMapperWidget : ModuleWidget {
 
 		addOutput(createOutputCentered<ThemedPJ301MPort>(mm2px(Vec(39.15, 113.115)), module, VOctMapper::MVOCT_OUTPUT));
 
-		VOctTuningDisplay* display = createWidget<VOctTuningDisplay>(mm2px(Vec(2.0, 78.0)));
+		VOctTuningDisplay* display = createWidget<VOctTuningDisplay>(mm2px(Vec(2.0, 80.0)));
 		display->box.size = mm2px(Vec(42, 7));
 		display->module = module;
 		addChild(display);

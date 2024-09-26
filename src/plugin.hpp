@@ -66,6 +66,75 @@ struct TuningDisplay : DigitalDisplay {
 	}
 };
 
+struct DigitalFourlineDisplay : Widget {
+	std::string fontPath;
+	std::string text1;
+	std::string text2;
+	std::string text3;
+	std::string text4;
+	float fontSize;
+	NVGcolor bgColor = nvgRGB(0x46,0x46, 0x46);
+	NVGcolor fgColor = SCHEME_YELLOW;
+	Vec textPos1;
+	Vec textPos2;
+	Vec textPos3;
+	Vec textPos4;
+
+	void prepareFont(const DrawArgs& args) {
+		// Get font
+		std::shared_ptr<Font> font = APP->window->loadFont(fontPath);
+		if (!font)
+			return;
+		nvgFontFaceId(args.vg, font->handle);
+		nvgFontSize(args.vg, fontSize);
+		nvgTextLetterSpacing(args.vg, -0.7);
+	}
+
+	void prepareFontCentered(const DrawArgs& args){
+		prepareFont(args);
+		nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+	}
+	void prepareFontLeft(const DrawArgs& args){
+		prepareFont(args);
+		nvgTextAlign(args.vg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
+	}
+
+
+	void draw(const DrawArgs& args) override {
+		// Background
+		nvgBeginPath(args.vg);
+		nvgRoundedRect(args.vg, 0, 0, box.size.x, box.size.y, 2);
+		nvgFillColor(args.vg, nvgRGB(0x19, 0x19, 0x19));
+		nvgFill(args.vg);
+	}
+
+	void drawLayer(const DrawArgs& args, int layer) override {
+		if (layer == 1) {
+
+			// Foreground text
+			nvgFillColor(args.vg, fgColor);
+			prepareFontCentered(args);
+			nvgText(args.vg, textPos1.x, textPos1.y, text1.c_str(), NULL);
+			prepareFontLeft(args);
+			nvgText(args.vg, textPos2.x, textPos2.y, text2.c_str(), NULL);
+			nvgText(args.vg, textPos3.x, textPos3.y, text3.c_str(), NULL);
+			nvgText(args.vg, textPos4.x, textPos4.y, text4.c_str(), NULL);
+		}
+		Widget::drawLayer(args, layer);
+	}
+};
+
+struct ExquisDisplay : DigitalFourlineDisplay {
+	ExquisDisplay() {
+		fontPath = asset::plugin(pluginInstance, "res/fonts/PTSans.ttc");
+		textPos1 = Vec(62, 8);
+		textPos2 = Vec(5, 22);
+		textPos3 = Vec(5, 36);
+		textPos4 = Vec(5, 50);
+		fontSize = 14;
+	}
+};
+
 
 
 template <typename TBase = GrayModuleLightWidget>

@@ -383,12 +383,13 @@ struct MicroExquis : Module {
 
 };
 
-struct MicroExquisTuningDisplay: TuningDisplay {
+struct MicroExquisDisplay: ExquisDisplay {
 	MicroExquis* module;
 	void step() override {
-		text = "12-TET";
+		text1 = module->message;
+		text2 = "12-TET";
 		if(module){
-			text = module->tuningPreset == MicroExquis::TuningPresets::TUNING_12TET ? "12-TET" :
+			text2 = module->tuningPreset == MicroExquis::TuningPresets::TUNING_12TET ? "12-TET" :
 				module->tuningPreset == MicroExquis::TuningPresets::TUNING_PYTHAGOREAN ? "Pythagorean" :
 				module->tuningPreset == MicroExquis::TuningPresets::TUNING_QUARTERCOMMA_MEANTONE ? "1/4-comma Meantone" :
 				module->tuningPreset == MicroExquis::TuningPresets::TUNING_THIRDCOMMA_MEANTONE ? "1/3-comma Meantone" :
@@ -399,15 +400,11 @@ struct MicroExquisTuningDisplay: TuningDisplay {
 				module->tuningPreset == MicroExquis::TuningPresets::TUNING_EXQUIS ? module->tuning_info_string : 
 				"Unknown";
 		}
+		text3 = "line 3";
+		text4 = "line 4";
 	};
 };
 
-struct InfoDisplay: TuningDisplay {
-	MicroExquis* module;
-	void step() override {
-		if (module) text = module->message;
-	};
-};
 
 
 struct MicroExquisWidget : ModuleWidget {
@@ -420,30 +417,23 @@ struct MicroExquisWidget : ModuleWidget {
 		addChild(createWidget<ThemedScrew>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 		addChild(createWidget<ThemedScrew>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(6.607, 48.091)), module, MicroExquis::TUNING_OCTAVE_PARAM));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(17.444, 48.091)), module, MicroExquis::TUNING_PITCHANGLE_PARAM));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(28.282, 48.091)), module, MicroExquis::SCALE_STEPS_A_PARAM));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(39.15, 48.091)), module, MicroExquis::SCALE_STEPS_B_PARAM));
-
-
-		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<WhiteLight>>>(mm2px(Vec(6.607, 64.347)), module, MicroExquis::COLORING_MODE_PARAM, MicroExquis::COLORING_MODE_LIGHT));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(39.15, 64.347)), module, MicroExquis::SCALE_MODE_PARAM));
+		// removed controls. re-add later, with patching
+		//addParam(createParamCentered<Trimpot>(mm2px(Vec(6.607, 48.091)), module, MicroExquis::TUNING_OCTAVE_PARAM));
+		//addParam(createParamCentered<Trimpot>(mm2px(Vec(17.444, 48.091)), module, MicroExquis::TUNING_PITCHANGLE_PARAM));
+		//addParam(createParamCentered<Trimpot>(mm2px(Vec(28.282, 48.091)), module, MicroExquis::SCALE_STEPS_A_PARAM));
+		//addParam(createParamCentered<Trimpot>(mm2px(Vec(39.15, 48.091)), module, MicroExquis::SCALE_STEPS_B_PARAM));
+		//addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<WhiteLight>>>(mm2px(Vec(6.607, 64.347)), module, MicroExquis::COLORING_MODE_PARAM, MicroExquis::COLORING_MODE_LIGHT));
+		//addParam(createParamCentered<Trimpot>(mm2px(Vec(39.15, 64.347)), module, MicroExquis::SCALE_MODE_PARAM));
 
 		addInput(createInputCentered<ThemedPJ301MPort>(mm2px(Vec(6.607, 113.115)), module, MicroExquis::VOCT_INPUT));
 
 		addOutput(createOutputCentered<ThemedPJ301MPort>(mm2px(Vec(39.15, 113.115)), module, MicroExquis::MVOCT_OUTPUT));
 		addOutput(createOutputCentered<ThemedPJ301MPort>(mm2px(Vec(39.15, 96.859)), module, MicroExquis::TUNING_DATA_OUTPUT));
 
-		MicroExquisTuningDisplay* display = createWidget<MicroExquisTuningDisplay>(mm2px(Vec(2.0, 78.0)));
-		display->box.size = mm2px(Vec(42, 7));
+		MicroExquisDisplay* display = createWidget<MicroExquisDisplay>(mm2px(Vec(2.0, 67.0)));
+		display->box.size = mm2px(Vec(42, 20));
 		display->module = module;
 		addChild(display);
-
-		InfoDisplay* infoDisplay = createWidget<InfoDisplay>(mm2px(Vec(2.0, 70.0)));
-		infoDisplay->box.size = mm2px(Vec(42, 7));
-		infoDisplay->module = module;
-		addChild(infoDisplay);
 
 	}
 

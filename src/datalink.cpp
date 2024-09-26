@@ -144,21 +144,10 @@
             addValue();
         }
     }
-    //TuningDataReceiver(rack::engine::Input* input): DataReceiver(input) {};
     void TuningDataReceiver::getTuningData(ConsistentTuning* tuning, RegularScale* scale){
-        //getIntValue(0);
-        //getIntValue(1);
-        //getFloatValue(2);
-        //getIntValue(3);
-        //getIntValue(4);
-        //getFloatValue(5);
-        //getIntValue(6);
-        //getIntValue(7);
-        //getIntValue(8);
-        //INFO("TuningDataReceiver::getTuningData %d %d %f %d %d %f %d %d %d", getIntValue(0), getIntValue(1), getFloatValue(2), getIntValue(3), getIntValue(4), getFloatValue(5), getIntValue(6), getIntValue(7), getIntValue(8));
-        
         tuning->setParams({getIntValue(0), getIntValue(1)}, getFloatValue(2), {getIntValue(3), getIntValue(4)}, getFloatValue(5));
-        //INFO("TUNING DATA %d %d %f", tuning->V1().x, tuning->V1().y, tuning->F1());
         scale->setScaleClass({getIntValue(6), getIntValue(7)});
         scale->mode = getIntValue(8);
     };
+
+    

@@ -511,7 +511,7 @@ struct VCOMHWidget : ModuleWidget {
 		addChild(createLightCentered<SmallLight<RedGreenBlueLight>>(mm2px(Vec(31.089, 16.428)), module, VCOMH::PHASE_LIGHT));
 
 
-		MHTuningDisplay* display = createWidget<MHTuningDisplay>(mm2px(Vec(2.0, 78.0)));
+		MHTuningDisplay* display = createWidget<MHTuningDisplay>(mm2px(Vec(2.0, 80.0)));
 		display->box.size = mm2px(Vec(42, 7));
 		display->module = module;
 		addChild(display);
