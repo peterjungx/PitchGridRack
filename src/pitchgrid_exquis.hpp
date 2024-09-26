@@ -282,8 +282,27 @@ struct PitchGridExquis: Exquis {
 		tuningIntervalSelectionModeOn = true;
 	}
 	void exitTuningIntervalSelectionMode(){
-		if (!tuningModeOn){
-			tuningConstantNote.stop();
+		//if (!tuningModeOn){
+		//	tuningConstantNote.stop();
+		//}
+		if (tuningModeOn){
+			if (!tuningConstantNoteSelected){
+				if (tuningModeRetuneInterval != ZERO_VECTOR && tuningModeRetuneInterval != scaleMapper.scale.scale_class){
+					tuningConstantNoteSelected = true;
+					tuningModeConstantInterval = scaleMapper.scale.scale_class;
+					// find note for interval of equivalence (octave)
+					ExquisNote* note = NULL;
+					for (ExquisNote& n: notes){
+						if (n.scaleCoord == scaleMapper.scale.scale_class){
+							note = &n;
+							break;
+						}
+					}
+					if (note != NULL){
+						tuningConstantNote.startWithNote(note);
+					}
+				}
+			}
 		}
 		showMainLayer();
 		tuningIntervalSelectionModeOn = false;
@@ -313,7 +332,15 @@ struct PitchGridExquis: Exquis {
 		INFO("retuneIntervalByAmount %f, (%d, %d) (%d,%d) ", amount, tuningModeRetuneInterval.x, tuningModeRetuneInterval.y, tuningModeConstantInterval.x, tuningModeConstantInterval.y);	
 		
 		if (tuningModeRetuneInterval == ZERO_VECTOR){
+			// change offset
 			tuning->setOffset(tuning->Offset() + 0.01*amount);
+		}else if (tuningModeRetuneInterval == scaleMapper.scale.scale_class && !tuningConstantNoteSelected){
+			// proportional stretch tuning
+			float f1 = tuning->vecToFreqRatioNoOffset( scaleMapper.scale.scale_class );
+			ScaleVector v2 = tuning->V1() == scaleMapper.scale.scale_class ? tuning->V2() : tuning->V1();
+			float f2 = tuning->V1() == scaleMapper.scale.scale_class ? tuning->F2() : tuning->F1();
+			tuning->setParams(scaleMapper.scale.scale_class, f1*exp(0.01*amount), v2, f2*exp(0.01*amount));
+
 		}else{
 			float retune_f = tuning->vecToFreqRatioNoOffset(tuningModeRetuneInterval);
 			float constant_f = tuning->vecToFreqRatioNoOffset(tuningModeConstantInterval);
@@ -516,31 +543,42 @@ struct PitchGridExquis: Exquis {
 				ExquisNote* note = getNoteByMidinote(noteId);
 				IntegerVector selectedInterval = note->scaleCoord;
 				INFO("selectedInterval: %d %d", selectedInterval.x, selectedInterval.y);
-				if (tuningModeOn == true){
-					tuningConstantNoteSelected = false;
-					tuningConstantNote.stop();
-					tuningModeOn = false;
-					tuningRetuneNote.stop();
-				}
+				//if (tuningModeOn == true){
+				//	tuningConstantNoteSelected = false;
+				//	tuningConstantNote.stop();
+				//	tuningModeOn = false;
+				//	tuningRetuneNote.stop();
+				//}
 				if (selectedInterval == ZERO_VECTOR){
 					tuningConstantNoteSelected = false;
 					tuningConstantNote.stop();
 					tuningModeRetuneInterval = selectedInterval;
 					tuningRetuneNote.startWithNote(note);
 					tuningModeOn = true;
-				}else if (note->scaleSeqNr>=0 && selectedInterval.x >= 0 && selectedInterval.y >= 0 && selectedInterval.x <= scaleMapper.scale.scale_class.x && selectedInterval.y <= scaleMapper.scale.scale_class.y){
-					if (tuningConstantNoteSelected == false){
-						tuningRetuneNote.stop();
+				} else if (note->scaleSeqNr>=0 && selectedInterval.x >= 0 && selectedInterval.y >= 0 && selectedInterval.x <= scaleMapper.scale.scale_class.x && selectedInterval.y <= scaleMapper.scale.scale_class.y){
+					if (tuningConstantNoteSelected){
+						tuningConstantNoteSelected = false;
+						tuningConstantNote.stop();
 						tuningModeOn = false;
-						tuningConstantNoteSelected = true;
-						tuningModeConstantInterval = selectedInterval;
-						tuningConstantNote.startWithNote(note);
-					}else{
-						if (selectedInterval != tuningModeConstantInterval){
+						tuningRetuneNote.stop();
+					}
+					if (tuningModeOn){
+						if (tuningModeRetuneInterval != ZERO_VECTOR){
+							tuningConstantNoteSelected = true;
+							tuningModeConstantInterval = selectedInterval;
+							tuningConstantNote.startWithNote(note);
+						}else{
+							//tuningConstantNoteSelected = false;
+							//tuningConstantNote.stop();
 							tuningModeRetuneInterval = selectedInterval;
 							tuningRetuneNote.startWithNote(note);
-							tuningModeOn = true;
 						}
+					}else{
+						tuningConstantNoteSelected = false;
+						tuningConstantNote.stop();
+						tuningModeRetuneInterval = selectedInterval;
+						tuningRetuneNote.startWithNote(note);
+						tuningModeOn = true;
 					}
 				} // otherwise ignore
 			}
