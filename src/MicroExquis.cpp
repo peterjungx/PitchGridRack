@@ -44,8 +44,7 @@ struct MicroExquis : Module {
 		NUM_OUTPUTS
 	};
 	enum LightIds {
-		COLORING_MODE_LIGHT,
-		SCALE_MODE_LIGHT,
+		ENUMS(EXQUIS_CONNECTED_LIGHT, 3),
 		NUM_LIGHTS
 	};
 
@@ -291,8 +290,18 @@ struct MicroExquis : Module {
 
 
 		if (lightDivider.process()) {
-			lights[COLORING_MODE_LIGHT].setBrightness(coloringModeParam);
-			lights[SCALE_MODE_LIGHT].setBrightness(scaleModeParam);
+
+			if (exquis.connected){ 
+				lights[EXQUIS_CONNECTED_LIGHT + 0].setBrightness(0.f);
+				lights[EXQUIS_CONNECTED_LIGHT + 1].setBrightness(1.f);
+				lights[EXQUIS_CONNECTED_LIGHT + 2].setBrightness(1.f);
+			}
+			else {
+				lights[EXQUIS_CONNECTED_LIGHT + 0].setBrightness(1.f);
+				lights[EXQUIS_CONNECTED_LIGHT + 1].setBrightness(0.f);
+				lights[EXQUIS_CONNECTED_LIGHT + 2].setBrightness(0.f);
+			}			
+			//lights[EXQUIS_CONNECTED_LIGHT].setColor(exquis.connected ? nvgRGB(0x00, 0xff, 0x00) : nvgRGB(0xff, 0x00, 0x00));
 
 			tuningDataSender.setTuningData(&tuning, &exquis.scaleMapper.scale);
 		}
@@ -477,12 +486,8 @@ struct ExquisHexDisplay : Widget {
 	}
 
 	void drawExquisLayout(const DrawArgs& args){
-		if (module->exquis.connected){
-			for (int i = 0; i < 61; i++){
-				drawHexAt(args, i2x(i), i2y(i), i);
-			}
-		}else{
-			drawBackground(args);
+		for (int i = 0; i < 61; i++){
+			drawHexAt(args, i2x(i), i2y(i), i);
 		}
 	}
 
@@ -531,6 +536,8 @@ struct MicroExquisWidget : ModuleWidget {
 		addChild(createWidget<ThemedScrew>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 		addChild(createWidget<ThemedScrew>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
+		addChild(createLightCentered<SmallLight<RedGreenBlueLight>>(mm2px(Vec(42.4, 11.0)), module, MicroExquis::EXQUIS_CONNECTED_LIGHT));
+
 		// removed controls. re-add later, with patching
 		//addParam(createParamCentered<Trimpot>(mm2px(Vec(6.607, 48.091)), module, MicroExquis::TUNING_OCTAVE_PARAM));
 		//addParam(createParamCentered<Trimpot>(mm2px(Vec(17.444, 48.091)), module, MicroExquis::TUNING_PITCHANGLE_PARAM));
@@ -543,6 +550,7 @@ struct MicroExquisWidget : ModuleWidget {
 
 		addOutput(createOutputCentered<ThemedPJ301MPort>(mm2px(Vec(39.15, 113.115)), module, MicroExquis::MVOCT_OUTPUT));
 		addOutput(createOutputCentered<ThemedPJ301MPort>(mm2px(Vec(39.15, 96.859)), module, MicroExquis::TUNING_DATA_OUTPUT));
+
 
 		MicroExquisDisplay* display = createWidget<MicroExquisDisplay>(mm2px(Vec(2.0, 67.0)));
 		display->box.size = mm2px(Vec(42, 20));
