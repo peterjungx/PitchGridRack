@@ -557,7 +557,7 @@ struct PitchGridExquis: Exquis {
 			}
 		}
 		// react to button presses in scale select mode
-		if (scaleSelectModeOn){
+		else if (scaleSelectModeOn){
 			// note on: select interval to tune
 			if (msg.getStatus()==0x9){
 				
@@ -570,6 +570,18 @@ struct PitchGridExquis: Exquis {
 					selectedScaleNote.startWithNote(note);
 				}
 			}
+		} 
+		if (msg.getStatus()==0x9){
+			// note on
+			uint8_t noteId = msg.getNote();
+			ExquisNote* note = getNoteByMidinote(noteId);
+			note->playing = true;
+		}
+		if (msg.getStatus()==0x8){
+			// note off
+			uint8_t noteId = msg.getNote();
+			ExquisNote* note = getNoteByMidinote(noteId);
+			note->playing = false;
 		}
 		
 	}

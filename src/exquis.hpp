@@ -61,6 +61,8 @@ struct ExquisNote {
 	ExquisVector scaleCoord;
 	uint8_t midinote;
 	int8_t scaleSeqNr;
+	Color shownColor;
+	bool playing = false;
 	ExquisNote(uint8_t noteId, Color color){
 		this->noteId = noteId;
 		this->color = color;
@@ -89,6 +91,7 @@ struct ExquisNote {
 	void sendSetColorMessage(midi::Output* midi_output, Color color){
 		midi::Message msg;
 		// F0 00 21 7E 03 noteId r g b F7
+		shownColor = color;
 		msg.bytes = {0xf0, 0x00, 0x21, 0x7e, 0x03, noteId, color.r, color.g, color.b, 0xf7};
 		midi_output->sendMessage(msg);
 	}
