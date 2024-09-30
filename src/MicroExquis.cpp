@@ -487,24 +487,30 @@ struct ExquisHexDisplay : Widget {
 
 	void drawExquisLayout(const DrawArgs& args){
 		for (int i = 0; i < 61; i++){
-			drawHexAt(args, i2x(i), i2y(i), i);
+			float x = i2x(i);
+			float y = i2y(i);
+			drawHexAt(args, x, y, i);
 		}
 	}
 
 	void drawHexAt(const DrawArgs& args, float x, float y, int index) {
 		nvgBeginPath(args.vg);
 		nvgMoveTo(args.vg, x, y-hexsz);
-		nvgLineTo(args.vg, x+hexsz*sqrt(1-.25), y-hexsz*.5);
-		nvgLineTo(args.vg, x+hexsz*sqrt(1-.25), y+hexsz*.5);
+		nvgLineTo(args.vg, x+hexsz*.866, y-hexsz*.5);
+		nvgLineTo(args.vg, x+hexsz*.866, y+hexsz*.5);
 		nvgLineTo(args.vg, x, y+hexsz);
-		nvgLineTo(args.vg, x-hexsz*sqrt(1-.25), y+hexsz*.5);
-		nvgLineTo(args.vg, x-hexsz*sqrt(1-.25), y-hexsz*.5);
+		nvgLineTo(args.vg, x-hexsz*.866, y+hexsz*.5);
+		nvgLineTo(args.vg, x-hexsz*.866, y-hexsz*.5);
 		nvgClosePath(args.vg);
-		if (module->exquis.notes[index].playing){
-			nvgFillColor(args.vg, nvgRGB(0xf9, 0xf9, 0xf9));
+		if (module){
+			if (module->exquis.notes[index].playing){
+				nvgFillColor(args.vg, nvgRGB(0xf9, 0xf9, 0xf9));
+			}else{
+				Color col = module->exquis.notes[index].shownColor;
+				nvgFillColor(args.vg, nvgRGB(0x79 + col.r, 0x79 + col.g, 0x79 + col.b));
+			}
 		}else{
-			Color col = module->exquis.notes[index].shownColor;
-			nvgFillColor(args.vg, nvgRGB(0x79 + col.r, 0x79 + col.g, 0x79 + col.b));
+			nvgFillColor(args.vg, nvgRGB(0x79, 0x79, 0x79));
 		}
 		nvgFill(args.vg);		
 
@@ -519,7 +525,6 @@ struct ExquisHexDisplay : Widget {
 	void drawLayer(const DrawArgs& args, int layer) override {
 		if (layer == 1) {
 			drawExquisLayout(args);
-
 		}
 		Widget::drawLayer(args, layer);
 	}	
