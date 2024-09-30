@@ -38,6 +38,9 @@ struct Color {
 	Color operator*(float brightness){
 		return {uint8_t(r*brightness), uint8_t(g*brightness), uint8_t(b*brightness)};
 	}
+	bool operator==(const Color& c) const {
+		return r == c.r && g == c.g && b == c.b;
+	}
 };
 
 Color XQ_COLOR_WHITE = {127,127,127};

@@ -22,6 +22,14 @@ struct IntegerVector {
 	IntegerVector operator-() const {
 		return {-x, -y};
 	}
+	void operator+=(const IntegerVector& c) {
+		x += c.x;
+		y += c.y;
+	}
+	void operator-=(const IntegerVector& c) {
+		x -= c.x;
+		y -= c.y;
+	}
 	// overload * operator -> scalar product
 	int operator*(const IntegerVector& c) const {
 		return x * c.x + y * c.y;
