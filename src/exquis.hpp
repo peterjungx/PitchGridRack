@@ -211,7 +211,7 @@ struct Exquis {
 	void setNoteColors(){
         if (!connected){
             needsNoteDisplayUpdate = true;
-            return;
+            //return;
         }
 		for (ExquisNote& note : notes){
             note.sendSetColorMessage(&midi_output, note.color * note.brightness);

@@ -4,6 +4,8 @@
 #include "exquis.hpp"
 #include "continuedFraction.hpp"
 
+#include "hsluv.h"
+
 struct ExquisScaleMapper {
 	RegularScale scale = RegularScale({2,5},1);
 	ExquisVector exquis_base = {5,5}, exquis_interval1 = {8,7}, exquis_interval2={7,6};
@@ -154,7 +156,7 @@ struct PitchGridExquis: Exquis {
 						r = note.scaleCoord * scaleMapper.scale.scale_class;
 						r /= scaleMapper.scale.scale_class * scaleMapper.scale.scale_class;
 						r = posfmod(r+.001f, 1.f);
-						note.brightness = note.scaleSeqNr == -1? 0.f : pow(8.f, - r);
+						note.brightness = note.scaleSeqNr == -1? 0.f : pow(6.f, - r);
 						if (note.scaleSeqNr == 0 && note.scaleCoord != ZERO_VECTOR){
 							note.brightness = .5f;
 						}
@@ -165,15 +167,33 @@ struct PitchGridExquis: Exquis {
 					break;
 
 				case COLORSCHEME_SCALE_COLOR_CIRCLE:
+
+
 					if (note.scaleSeqNr != -1){
+
+
 						note.brightness = 1.f;
+						double r, g, b;
+
 						r = note.scaleCoord * scaleMapper.scale.scale_class;
 						r /= scaleMapper.scale.scale_class * scaleMapper.scale.scale_class;
-						note.color = {
-							(uint8_t)(63+63*sin2pi_pade_05_5_4(posfmod(r+.25f, 1.f))),
-							(uint8_t)(32+32*sin2pi_pade_05_5_4(posfmod(r+.5f, 1.f))),
-							(uint8_t)(63+63*sin2pi_pade_05_5_4(posfmod(r+.75f, 1.f)))
-						};
+						r = posfmod(r+.06f, 1.f);
+
+						hsluv2rgb(
+							360.f * r,
+							98.f,
+							note.scaleCoord == ZERO_VECTOR ? 60.f: 30.f,
+							&r, &g, &b
+						);
+						note.color = Color(127*r, 127*g, 127*b);
+
+						//r = note.scaleCoord * scaleMapper.scale.scale_class;
+						//r /= scaleMapper.scale.scale_class * scaleMapper.scale.scale_class;
+						//note.color = {
+						//	(uint8_t)(63+63*sin2pi_pade_05_5_4(posfmod(r+.25f, 1.f))),
+						//	(uint8_t)(32+32*sin2pi_pade_05_5_4(posfmod(r+.5f, 1.f))),
+						//	(uint8_t)(63+63*sin2pi_pade_05_5_4(posfmod(r+.75f, 1.f)))
+						//};
 					}else{
 						note.color = XQ_COLOR_BLACK;
 						note.brightness = 0.f;
@@ -198,8 +218,8 @@ struct PitchGridExquis: Exquis {
 				note.brightness = 0.f;
 			}else{
 				if (note.color==XQ_COLOR_BLACK){
-					note.color = XQ_COLOR_EXQUIS_BLUE;
-					note.brightness = .2f;
+					note.color = XQ_COLOR_WHITE;
+					note.brightness = .15f;
 				}
 			}
 		}
@@ -248,8 +268,8 @@ struct PitchGridExquis: Exquis {
 				note.brightness = 1.f;
 			}else{
 				// axes
-				note.color = XQ_COLOR_EXQUIS_BLUE;
-				note.brightness = .2f;
+				note.color = XQ_COLOR_WHITE;
+				note.brightness = .15f;
 			}
 				
 		}
@@ -623,7 +643,6 @@ struct PitchGridExquis: Exquis {
 			ExquisNote* note = getNoteByMidinote(noteId);
 			note->playing = false;
 		}
-		
 	}
 
 
