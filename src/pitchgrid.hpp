@@ -6,9 +6,6 @@ using namespace rack;
 
 typedef IntegerVector ScaleVector;
 
-
-//std::mutex consistent_tuning_offset_mutex;
-
 class ConsistentTuning {
 	ScaleVector v1, v2;
 	float f1, log2f1;
@@ -33,22 +30,25 @@ public:
 	float vecToFreqRatio(ScaleVector v){
 		float z1 = IntegerDet(v, this->v2) / this->det;
 		float z2 = IntegerDet(this->v1, v) / this->det;
-		//std::lock_guard<std::mutex> guard(consistent_tuning_offset_mutex);
 		float f = pow(this->f1, z1) * pow(this->f2, z2) * pow(2.f, offset);
 		return f;
 	};
 	float vecToFreqRatioNoOffset(ScaleVector v){
 		float z1 = IntegerDet(v, this->v2) / this->det;
 		float z2 = IntegerDet(this->v1, v) / this->det;
-		//std::lock_guard<std::mutex> guard(consistent_tuning_offset_mutex);
 		float f = pow(this->f1, z1) * pow(this->f2, z2);
 		return f;
 	};
 	float vecToVoltage(ScaleVector v){
 		float z1 = IntegerDet(v, this->v2) / this->det;
 		float z2 = IntegerDet(this->v1, v) / this->det;
-		//std::lock_guard<std::mutex> guard(consistent_tuning_offset_mutex);
 		float voltage = z1 * this->log2f1 + z2 * this->log2f2 + offset;
+		return voltage;
+	};
+	float vecToVoltageNoOffset(ScaleVector v){
+		float z1 = IntegerDet(v, this->v2) / this->det;
+		float z2 = IntegerDet(this->v1, v) / this->det;
+		float voltage = z1 * this->log2f1 + z2 * this->log2f2;
 		return voltage;
 	};
 	ScaleVector V1(){
@@ -76,7 +76,7 @@ public:
 };
 
 int IntegerGCD(int a, int b);
-
+int inverseModulo(int a, int b);
 
 
 struct RegularScale {
@@ -85,6 +85,7 @@ struct RegularScale {
 	ScaleVector scale_class = {1,1};
 	int mode = 1; // 1=major
 	int n = 2;
+	int inverse_of_x = 1;
 	RegularScale(ScaleVector scale_class, int mode){
 		setScaleClass(scale_class);
 		this->mode = mode;
@@ -96,6 +97,7 @@ struct RegularScale {
 		if (mode>=n){
 			mode = n-1;
 		}
+		inverse_of_x = inverseModulo(scale_class.x, n);
 	}
 	ScaleVector scaleNoteSeqNrToCoord(int seqNr){
 		int x = (int)(scale_class.x * seqNr - 1.f * (n-(mode+1)) / n - .5f);
@@ -112,6 +114,25 @@ struct RegularScale {
 		return IntegerGCD(v.x, v.y) == 1;
 	}
 
+	std::string canonicalNameForCoord(ScaleVector c){
+		int d = -(c.x * scale_class.y - c.y * scale_class.x);
+		int diatonic_note = (inverse_of_x*d+100*n)%n+1;
+		//int diatonic_note = coordToScaleNoteSeqNr(c) + 1;
+		int accidentals = (d+1+100*n)/n-100;
+
+
+		std::string result = "";
+		while(accidentals>0){
+			result += "#";
+			accidentals--;
+		}
+		while(accidentals<0){
+			result += "b";
+			accidentals++;
+		}
+		result += std::to_string(diatonic_note);
+		return result;
+	}
 
 
 };

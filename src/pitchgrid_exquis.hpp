@@ -147,13 +147,13 @@ struct PitchGridExquis: Exquis {
 			note.scaleCoord = scaleMapper.exquis2scale(note.coord - scaleMapper.exquis_base);
 			note.scaleSeqNr = scaleMapper.scale.coordToScaleNoteSeqNr(note.scaleCoord);
 
-			//r = r - floor(r);
-			float r;
+			float octave_fr = tuning ? tuning->vecToVoltageNoOffset(scaleMapper.scale.scale_class) - tuning->vecToVoltageNoOffset(ZERO_VECTOR) : 1.f;
+			
 			switch(colorScheme){
 				case COLORSCHEME_SCALE_MONOCHROME:
 					if (note.scaleSeqNr != -1){
 						note.color = note.scaleSeqNr == 0 ? XQ_COLOR_EXQUIS_BLUE : XQ_COLOR_EXQUIS_YELLOW;
-						r = note.scaleCoord * scaleMapper.scale.scale_class;
+						float r = note.scaleCoord * scaleMapper.scale.scale_class;
 						r /= scaleMapper.scale.scale_class * scaleMapper.scale.scale_class;
 						r = posfmod(r+.001f, 1.f);
 						note.brightness = note.scaleSeqNr == -1? 0.f : pow(6.f, - r);
@@ -171,29 +171,31 @@ struct PitchGridExquis: Exquis {
 
 					if (note.scaleSeqNr != -1){
 
-
 						note.brightness = 1.f;
 						double r, g, b;
+						float h;
+						if (tuning){
+							h = (tuning->vecToVoltageNoOffset(note.scaleCoord)) / octave_fr;
+						}else{
+							h = (float)(note.scaleCoord * scaleMapper.scale.scale_class) / (scaleMapper.scale.scale_class * scaleMapper.scale.scale_class);
+						}
+						//float h = note.scaleCoord * scaleMapper.scale.scale_class;
+						//h /= scaleMapper.scale.scale_class * scaleMapper.scale.scale_class;
+						//INFO("scale coord = (%i,%i) h: %f, octfr: %f", note.scaleCoord.x, note.scaleCoord.y, h, octave_fr);
 
-						r = note.scaleCoord * scaleMapper.scale.scale_class;
-						r /= scaleMapper.scale.scale_class * scaleMapper.scale.scale_class;
-						r = posfmod(r+.06f, 1.f);
+						//float h2 = tuning->vecToFreqRatioNoOffset(note.scaleCoord) / octave_fr;
+						h = 360.f * posfmod(h+.106f, 1.f);
+
+						INFO("scale coord = (%i,%i) h: %f", note.scaleCoord.x, note.scaleCoord.y, h);
 
 						hsluv2rgb(
-							360.f * r,
-							98.f,
-							note.scaleCoord == ZERO_VECTOR ? 60.f: 30.f,
+							(double)h,
+							100.f,
+							note.scaleCoord == ZERO_VECTOR ? 70.f: 30.f,
 							&r, &g, &b
 						);
 						note.color = Color(127*r, 127*g, 127*b);
 
-						//r = note.scaleCoord * scaleMapper.scale.scale_class;
-						//r /= scaleMapper.scale.scale_class * scaleMapper.scale.scale_class;
-						//note.color = {
-						//	(uint8_t)(63+63*sin2pi_pade_05_5_4(posfmod(r+.25f, 1.f))),
-						//	(uint8_t)(32+32*sin2pi_pade_05_5_4(posfmod(r+.5f, 1.f))),
-						//	(uint8_t)(63+63*sin2pi_pade_05_5_4(posfmod(r+.75f, 1.f)))
-						//};
 					}else{
 						note.color = XQ_COLOR_BLACK;
 						note.brightness = 0.f;
@@ -224,6 +226,14 @@ struct PitchGridExquis: Exquis {
 			}
 		}
 		needsNoteDisplayUpdate=true;
+	}
+
+	void updateKeyDisplay(){
+		if (arrangeModeOn || tuningIntervalSelectionModeOn){
+			showSingleOctaveLayer();
+		}else{
+			showAllOctavesLayer();
+		}
 	}
 
 	ScaleVector scaleClassForNote(ExquisNote* note){
@@ -353,6 +363,8 @@ struct PitchGridExquis: Exquis {
 		}
 
 		didManualRetune = true;
+		updateKeyDisplay();
+
 	}
 
 	void justifyTuning(){
@@ -480,11 +492,7 @@ struct PitchGridExquis: Exquis {
 							if (!scaleSelectModeOn){
 								if (value == 1){
 									colorScheme = (ColorScheme)((colorScheme + 1) % NUM_COLORSCHEMES);
-									if (arrangeModeOn || tuningIntervalSelectionModeOn){
-										showSingleOctaveLayer();
-									}else{
-										showAllOctavesLayer();
-									}
+									updateKeyDisplay();
 								}
 							}
 							break;
@@ -515,11 +523,7 @@ struct PitchGridExquis: Exquis {
 						case 3:
 							if (!scaleSelectModeOn){
 								scaleMapper.scale.mode = scaleMapper.scale.mode >0 ? scaleMapper.scale.mode - 1 : 0;
-								if (arrangeModeOn || tuningIntervalSelectionModeOn){
-									showSingleOctaveLayer();
-								}else{
-									showAllOctavesLayer();
-								}
+								updateKeyDisplay();
 							}
 							break;
 					}
@@ -549,11 +553,7 @@ struct PitchGridExquis: Exquis {
 						case 3:
 							if (!scaleSelectModeOn){
 								scaleMapper.scale.mode = scaleMapper.scale.mode < scaleMapper.scale.n-1 ? scaleMapper.scale.mode + 1 : scaleMapper.scale.n-1;
-								if (arrangeModeOn || tuningIntervalSelectionModeOn){
-									showSingleOctaveLayer();
-								}else{
-									showAllOctavesLayer();
-								}
+								updateKeyDisplay();
 							}
 							break;
 					}

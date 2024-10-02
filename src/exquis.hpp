@@ -74,6 +74,10 @@ struct ExquisNote {
 		this->scaleSeqNr = -1;
 		this->brightness = 1.f;
 	}
+	std::string canonicalName(){
+		return std::to_string(scaleSeqNr + 1);
+	}
+
 	ExquisVector idToCoord(){
 		ExquisVector c;
 		int u = noteId % 11;

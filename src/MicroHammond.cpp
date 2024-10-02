@@ -437,6 +437,7 @@ struct VCOMH : Module {
 
 
 			}
+
 		}
 		if (inputs[TUNING_DATA_INPUT].isConnected()) {
 			tuningDataReceiver.processWithInput(&inputs[TUNING_DATA_INPUT]);
@@ -471,7 +472,9 @@ struct MHTuningDisplay: TuningDisplay {
 				module->tuningPreset == VCOMH::TuningPresets::TUNING_19TET ? "19-TET" :
 				module->tuningPreset == VCOMH::TuningPresets::TUNING_31TET ? "31-TET" :
 				module->tuningPreset == VCOMH::TuningPresets::TUNING_HARMONIC ? "Harmonic" :
-				module->tuningPreset == VCOMH::TuningPresets::TUNING_SYNCED ? "SYNC" : 
+				module->tuningPreset == VCOMH::TuningPresets::TUNING_SYNCED ? (
+					module->inputs[VCOMH::InputIds::TUNING_DATA_INPUT].isConnected() ? "SYNC": "SYNCED (disconnected)"
+				) : 
 				"Unknown";
 		}
 	};

@@ -114,6 +114,14 @@ struct MicroExquis : Module {
 
 		exquis.tuning = &tuning;
 
+		//INFO("MicroExquis initialized");
+		//double h,s,l;
+		//double r = (double)XQ_COLOR_EXQUIS_YELLOW.r / 127.0f;
+		//double g = (double)XQ_COLOR_EXQUIS_YELLOW.g / 127.0f;
+		//double b = (double)XQ_COLOR_EXQUIS_YELLOW.b / 127.0f;
+		//rgb2hsluv(r, g, b, &h, &s, &l);
+		//INFO("rgb2hsluv: %f %f %f -> %f %f %f", r, g, b, h, s, l);
+
 	}
 
 	void setParams(
@@ -503,16 +511,34 @@ struct ExquisHexDisplay : Widget {
 		nvgLineTo(args.vg, x-hexsz*.866, y-hexsz*.5);
 		nvgClosePath(args.vg);
 		if (module){
-			if (module->exquis.notes[index].playing){
+			ExquisNote* note = &module->exquis.notes[index];
+			if (note->playing){
 				nvgFillColor(args.vg, nvgRGB(0xf9, 0xf9, 0xf9));
 			}else{
-				Color col = module->exquis.notes[index].shownColor;
+				Color col = note->shownColor;
 				nvgFillColor(args.vg, nvgRGB(0x79 + col.r, 0x79 + col.g, 0x79 + col.b));
 			}
+			nvgFill(args.vg);
+			
+			std::string name = module->exquis.scaleMapper.scale.canonicalNameForCoord(note->scaleCoord);
+			nvgFontSize(args.vg, name.length() > 3? 5: name.length() > 2? 6: 8);
+			nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+			if (note->playing){
+				nvgFillColor(args.vg, nvgRGB(0x0f, 0x0f, 0x0f));
+			} else if (note->scaleSeqNr!=-1){
+				nvgFillColor(args.vg, nvgRGB(0xff, 0xff, 0xff));
+			}else{
+				nvgFillColor(args.vg, nvgRGB(0x49, 0x49, 0x49));
+			}
+			
+			nvgText(args.vg, x, y, name.c_str(), NULL);
+
+
 		}else{
 			nvgFillColor(args.vg, nvgRGB(0x79, 0x79, 0x79));
+			nvgFill(args.vg);
 		}
-		nvgFill(args.vg);		
+				
 
 	}
 
