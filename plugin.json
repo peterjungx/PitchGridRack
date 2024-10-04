@@ -42,9 +42,10 @@
       "description": "Microtonal interface to the Exquis by Intuitive Instruments",
       "manualUrl": "https://github.com/peterjungx/PitchGridRack",
       "tags": [
-        "Quantizer",
+        "External",
+        "MIDI",
+        "Controller",
         "Tuner",
-        "Utility",
         "Polyphonic"
       ]
     }

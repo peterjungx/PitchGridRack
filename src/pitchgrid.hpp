@@ -129,11 +129,12 @@ struct RegularScale {
 
 		std::string result = "";
 		while(accidentals>0){
-			result += "#";
+			//result += "#";
+			result += "\u266F";
 			accidentals--;
 		}
 		while(accidentals<0){
-			result += "b";
+			result += "\u266D";
 			accidentals++;
 		}
 		result += std::to_string(diatonic_note);

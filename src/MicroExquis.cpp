@@ -19,6 +19,8 @@ to explore
 #include "pitchgrid_exquis.hpp"
 #include "datalink.hpp"
 
+#include "exquis_display.hpp"
+
 using simd::float_4;
 using simd::int32_4;
 
@@ -32,6 +34,10 @@ struct MicroExquis : Module {
 		SCALE_STEPS_A_PARAM, 
 		SCALE_STEPS_B_PARAM, 
 		SCALE_MODE_PARAM, // 1=major
+		
+		KEY_LABELS_SWITCH_PARAM,
+		//KEY_LABELS_PARAM,
+
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -45,8 +51,17 @@ struct MicroExquis : Module {
 	};
 	enum LightIds {
 		ENUMS(EXQUIS_CONNECTED_LIGHT, 3),
+		LABELS_NONE_LIGHT,
+		LABELS_SCALE_LIGHT,
+		LABELS_COORD_LIGHT,
 		NUM_LIGHTS
 	};
+
+	enum KeyLabels {
+		KEY_LABELS_NONE,
+		KEY_LABELS_SCALE,
+		KEY_LABELS_COORD
+	} keyLabels = KEY_LABELS_NONE;
 
 	ConsistentTuning tuning = ConsistentTuning({2, 5}, 2.f, {1, 3}, pow(2.f, 7.f/12.f)); // 12TET
 
@@ -84,9 +99,16 @@ struct MicroExquis : Module {
 	float scaleModeParam;
 
 	bool initialized = false;
+	bool last_key_param_state_low = true;
 
-	std::string tuning_info_string1 = "";
-	std::string tuning_info_string2 = "";
+	//std::string tuning_info_string1 = "";
+	//std::string tuning_info_string2 = "";
+
+	std::string tuningvector1_coord_text = "";
+	std::string tuningvector1_fr_text = "";
+	std::string tuningvector2_coord_text = "";
+	std::string tuningvector2_fr_text = "";
+	std::string tuningbase_text = "";
 
 	TuningDataSender tuningDataSender = TuningDataSender();
 
@@ -100,6 +122,8 @@ struct MicroExquis : Module {
 		configParam(SCALE_STEPS_A_PARAM, 1.f, 7.f, 2.f, "Scale Steps A", "V");
 		configParam(SCALE_STEPS_B_PARAM, 1.f, 7.f, 5.f, "Scale Steps B", "V");
 		configParam(SCALE_MODE_PARAM, 0.f, 1.f, 1.f, "Scale Mode", "", 0.f, 7.f);
+		configSwitch(KEY_LABELS_SWITCH_PARAM, 0.0f, 1.0f, 0.0f, "Change key labels");
+		//configSwitch(KEY_LABELS_PARAM, 1.0f, 3.0f, 1.0f, "Key Labels", {"None", "Scale", "Coord"});
 
 		configInput(VOCT_INPUT, "1V/octave pitch");
 		configOutput(MVOCT_OUTPUT, "Microtonal Interface to the Exquis by Intuitive Instruments");
@@ -140,15 +164,21 @@ struct MicroExquis : Module {
 
 	void setTuningInfoString(){
 		
+		tuningvector1_coord_text = std::to_string(tuning.V1().y) + ";" + std::to_string(tuning.V1().x);
+		
 		std::stringstream ss1;
 		ss1 << std::fixed << std::setprecision(1) << 1200*log2(tuning.F1()) << "ct"
 			<< " (" <<  exquis.contFracDisplay(tuning.F1()) << ")";
-		tuning_info_string1 = "(" + std::to_string(tuning.V1().y) + "," + std::to_string(tuning.V1().x) + ")=" + ss1.str();
+		tuningvector1_fr_text = ss1.str();
+
+		tuningvector2_coord_text = std::to_string(tuning.V2().y) + ";" + std::to_string(tuning.V2().x);
 
 		std::stringstream ss2;
 		ss2 << std::fixed << std::setprecision(1) << 1200*log2(tuning.F2()) << "ct"
 			<< " (" <<  exquis.contFracDisplay(tuning.F2()) << ")";
-		tuning_info_string2 = "(" + std::to_string(tuning.V2().y) + "," + std::to_string(tuning.V2().x) + ")=" + ss2.str();
+		tuningvector2_fr_text = ss2.str();
+
+		tuningbase_text = std::to_string(tuning.Offset()) + "V | " + std::to_string(tuning.OffsetAsStandardFreq()) + "Hz";
 
 	}
 
@@ -209,8 +239,6 @@ struct MicroExquis : Module {
 				setTuningInfoString();
 				exquis.didManualRetune = false;
 			}
-			
-
 		}
 
 
@@ -312,6 +340,19 @@ struct MicroExquis : Module {
 			//lights[EXQUIS_CONNECTED_LIGHT].setColor(exquis.connected ? nvgRGB(0x00, 0xff, 0x00) : nvgRGB(0xff, 0x00, 0x00));
 
 			tuningDataSender.setTuningData(&tuning, &exquis.scaleMapper.scale);
+
+			if (params[KEY_LABELS_SWITCH_PARAM].getValue() < 0.5 && !last_key_param_state_low) {
+				keyLabels = (KeyLabels)((keyLabels + 1) % 3);
+				last_key_param_state_low = true;
+			}else if (params[KEY_LABELS_SWITCH_PARAM].getValue() > 0.5){
+				last_key_param_state_low = false;
+			}
+
+			//keyLabels = (KeyLabels)round(params[KEY_LABELS_PARAM].getValue()-1);
+
+			lights[LABELS_NONE_LIGHT].value = keyLabels == KeyLabels::KEY_LABELS_NONE;
+			lights[LABELS_SCALE_LIGHT].value = keyLabels == KeyLabels::KEY_LABELS_SCALE;
+			lights[LABELS_COORD_LIGHT].value = keyLabels == KeyLabels::KEY_LABELS_COORD;
 		}
 		tuningDataSender.processWithOutput(&outputs[TUNING_DATA_OUTPUT]);
 
@@ -454,26 +495,30 @@ struct MicroExquisDisplay: ExquisDisplay {
 	MicroExquis* module;
 	void step() override {
 		if (module){
-			text1 = "scale=(" + std::to_string(module->exquis.scaleMapper.scale.scale_class.y) + "," + std::to_string(module->exquis.scaleMapper.scale.scale_class.x) + ") mode=c" + std::to_string(module->exquis.scaleMapper.scale.mode+1);
-			text2 = module->tuning_info_string1;
-			text3 = module->tuning_info_string2;
+			scalesystem_text = std::to_string(module->exquis.scaleMapper.scale.scale_class.y) + ";" + std::to_string(module->exquis.scaleMapper.scale.scale_class.x);
+			scalemode_text = "c" + std::to_string(module->exquis.scaleMapper.scale.mode+1);
+			tuningvector1_coord_text = module->tuningvector1_coord_text;
+			tuningvector1_fr_text = module->tuningvector1_fr_text;
+			tuningvector2_coord_text = module->tuningvector2_coord_text;
+			tuningvector2_fr_text = module->tuningvector2_fr_text;
+			tuningbase_text = module->tuningbase_text;
 			std::stringstream ss;
-			ss << "base: " 
-				<< std::fixed << std::setprecision(3) 
-				<< module->tuning.Offset()
-				<< "V "
+			ss << std::fixed 
 				<< std::setprecision(2) 
 				<< module->tuning.OffsetAsStandardFreq()
-				<< "Hz";
-			text4 = ss.str();
+				<< "Hz ("
+				<< std::setprecision(3) 
+				<< module->tuning.Offset()
+				<< "V)";
+			tuningbase_text = ss.str();
 		}
 	};
 };
 
 struct ExquisHexDisplay : Widget {
 	MicroExquis* module;
-	float hexsz = 5.8;
-	bool showScaleLabels = true;
+	float hexsz = 2*5.8;
+
 
 	void draw(const DrawArgs& args) override {
 		drawBackground(args);
@@ -481,16 +526,17 @@ struct ExquisHexDisplay : Widget {
 	void drawBackground(const DrawArgs& args) {
 		// Background
 		nvgBeginPath(args.vg);
-		nvgRoundedRect(args.vg, 0, 0, box.size.x, box.size.y, 2);
+		//nvgRoundedRect(args.vg, 0, 0, box.size.x, box.size.y, 2);
+		nvgRect(args.vg, 0, 0, box.size.x, box.size.y);
 		nvgFillColor(args.vg, nvgRGB(0x19, 0x19, 0x19));
 		nvgFill(args.vg);
 	}
 
 	float i2x(int i){
-		return 9.5 + (i % 11) * 2*hexsz*1.1 - ((i%11)/6) * 11*hexsz*1.1;
+		return 1.5 * hexsz + (i % 11) * 2*hexsz*1.1 - ((i%11)/6) * 11*hexsz*1.1;
 	}
 	float i2y(int i){
-		return 10 + 20*hexsz - (i / 11) * 4*hexsz - ((i % 11)/6) * 2*hexsz;
+		return 1.5 * hexsz + 20*hexsz - (i / 11) * 4*hexsz - ((i % 11)/6) * 2*hexsz;
 	}
 
 	void drawExquisLayout(const DrawArgs& args){
@@ -520,29 +566,43 @@ struct ExquisHexDisplay : Widget {
 			}
 			nvgFill(args.vg);
 			
-			if (showScaleLabels){
-				std::string name = module->exquis.scaleMapper.scale.canonicalNameForCoord(note->scaleCoord);
-				nvgFontSize(args.vg, name.length() > 3? 5: name.length() > 2? 6: 8);
-				nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-				if (note->playing){
-					nvgFillColor(args.vg, nvgRGB(0x0f, 0x0f, 0x0f));
-				} else if (note->scaleSeqNr!=-1){
-					nvgFillColor(args.vg, nvgRGB(0xff, 0xff, 0xff));
-				}else{
-					nvgFillColor(args.vg, nvgRGB(0x49, 0x49, 0x49));
-				}
-				
-				nvgText(args.vg, x, y, name.c_str(), NULL);				
+			std::string label;
+			switch (module->keyLabels){
+				case MicroExquis::KeyLabels::KEY_LABELS_SCALE:
+					label = module->exquis.scaleMapper.scale.canonicalNameForCoord(note->scaleCoord);
+					nvgFontSize(args.vg, label.length() > 5? int(1.0*hexsz): int(1.3*hexsz));
+					nvgTextLetterSpacing(args.vg, -1.2);
+					nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+					if (note->playing){
+						nvgFillColor(args.vg, nvgRGB(0x0f, 0x0f, 0x0f));
+					} else if (note->scaleSeqNr!=-1){
+						nvgFillColor(args.vg, nvgRGB(0xff, 0xff, 0xff));
+					}else{
+						nvgFillColor(args.vg, nvgRGB(0x49, 0x49, 0x49));
+					}
+					nvgText(args.vg, x, y, label.c_str(), NULL);		
+					break;
+				case MicroExquis::KeyLabels::KEY_LABELS_COORD:
+					label = std::to_string(note->scaleCoord.y) + ";" + std::to_string(note->scaleCoord.x);
+					nvgFontSize(args.vg, label.length() > 3? int(0.9*hexsz): int(1.2*hexsz));
+					nvgTextLetterSpacing(args.vg, -1.2);
+					nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+					if (note->playing){
+						nvgFillColor(args.vg, nvgRGB(0x0f, 0x0f, 0x0f));
+					} else if (note->scaleSeqNr!=-1){
+						nvgFillColor(args.vg, nvgRGB(0xff, 0xff, 0xff));
+					}else{
+						nvgFillColor(args.vg, nvgRGB(0x49, 0x49, 0x49));
+					}
+					nvgText(args.vg, x, y, label.c_str(), NULL);
+					break;
+				case MicroExquis::KeyLabels::KEY_LABELS_NONE:
+					break;
 			}
-
-
-
 		}else{
 			nvgFillColor(args.vg, nvgRGB(0x79, 0x79, 0x79));
 			nvgFill(args.vg);
 		}
-				
-
 	}
 
 	void drawScalePath(const DrawArgs& args){
@@ -558,13 +618,14 @@ struct ExquisHexDisplay : Widget {
 		Widget::drawLayer(args, layer);
 	}	
 
-	void onButton(const event::Button& e) override {
-		if (e.action == GLFW_PRESS) {
-			showScaleLabels = !showScaleLabels;
-		}
-	}
+	//void onButton(const event::Button& e) override {
+	//	if (e.action == GLFW_PRESS) {
+	//		labels = (Labels)(((int)labels + 1) % 3);
+	//	}
+	//}
 
 };
+
 
 struct MicroExquisWidget : ModuleWidget {
 	MicroExquisWidget(MicroExquis* module) {
@@ -576,7 +637,11 @@ struct MicroExquisWidget : ModuleWidget {
 		addChild(createWidget<ThemedScrew>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 		addChild(createWidget<ThemedScrew>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addChild(createLightCentered<SmallLight<RedGreenBlueLight>>(mm2px(Vec(42.4, 11.0)), module, MicroExquis::EXQUIS_CONNECTED_LIGHT));
+		// 128.5 mm -> 380 px -> 0.338158, 2.957
+		// 5.08 mm -> 15 px
+		// 
+
+		addChild(createLightCentered<SmallLight<RedGreenBlueLight>>(mm2px(Vec(5.0, 8.5)), module, MicroExquis::EXQUIS_CONNECTED_LIGHT));
 
 		// removed controls. re-add later, with patching
 		//addParam(createParamCentered<Trimpot>(mm2px(Vec(6.607, 48.091)), module, MicroExquis::TUNING_OCTAVE_PARAM));
@@ -588,19 +653,24 @@ struct MicroExquisWidget : ModuleWidget {
 
 		addInput(createInputCentered<ThemedPJ301MPort>(mm2px(Vec(6.607, 113.115)), module, MicroExquis::VOCT_INPUT));
 
-		addOutput(createOutputCentered<ThemedPJ301MPort>(mm2px(Vec(39.15, 113.115)), module, MicroExquis::MVOCT_OUTPUT));
-		addOutput(createOutputCentered<ThemedPJ301MPort>(mm2px(Vec(39.15, 96.859)), module, MicroExquis::TUNING_DATA_OUTPUT));
+		addOutput(createOutputCentered<ThemedPJ301MPort>(mm2px(Vec(83.32, 113.115)), module, MicroExquis::MVOCT_OUTPUT));
+		addOutput(createOutputCentered<ThemedPJ301MPort>(mm2px(Vec(94.77, 113.115)), module, MicroExquis::TUNING_DATA_OUTPUT));
 
+		addChild(createLightCentered<SmallLight<GreenLight>>(mm2px(Vec(31., 106.915)), module, MicroExquis::LABELS_NONE_LIGHT));
+		addChild(createLightCentered<SmallLight<GreenLight>>(mm2px(Vec(31., 111.615)), module, MicroExquis::LABELS_SCALE_LIGHT));
+		addChild(createLightCentered<SmallLight<GreenLight>>(mm2px(Vec(31., 116.315)), module, MicroExquis::LABELS_COORD_LIGHT));
+		addParam(createParamCentered<VCVBezel>(mm2px(Vec(24., 113.115)), module, MicroExquis::KEY_LABELS_SWITCH_PARAM));
 
-		MicroExquisDisplay* display = createWidget<MicroExquisDisplay>(mm2px(Vec(2.0, 67.0)));
-		display->box.size = mm2px(Vec(42, 20));
-		display->module = module;
-		addChild(display);
-
-		ExquisHexDisplay* hexDisplay = createWidget<ExquisHexDisplay>(mm2px(Vec(9.0, 17.0)));
-		hexDisplay->box.size = mm2px(Vec(28, 46));
+		ExquisHexDisplay* hexDisplay = createWidget<ExquisHexDisplay>(mm2px(Vec(0.338, 12.5)));
+		//hexDisplay->box.size = mm2px(Vec(28, 46));
+		hexDisplay->box.size = mm2px(Vec(55, 91));
 		hexDisplay->module = module;
 		addChild(hexDisplay);
+
+		MicroExquisDisplay* display = createWidget<MicroExquisDisplay>(mm2px(Vec(55.0+2*0.338, 12.5)));
+		display->box.size = mm2px(Vec(101.45-55-3*0.338, 91));
+		display->module = module;
+		addChild(display);
 
 	}
 

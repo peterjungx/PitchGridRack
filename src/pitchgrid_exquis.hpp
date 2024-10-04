@@ -147,6 +147,7 @@ struct PitchGridExquis: Exquis {
 			return;
 		}
 		for (ExquisNote& note : notes){
+
 			note.scaleCoord = scaleMapper.exquis2scale(note.coord - scaleMapper.exquis_base);
 			note.scaleSeqNr = scaleMapper.scale.coordToScaleNoteSeqNr(note.scaleCoord);
 			float octave_fr = tuning ? tuning->vecToVoltageNoOffset(scaleMapper.scale.scale_class) - tuning->vecToVoltageNoOffset(ZERO_VECTOR) : 1.f;
@@ -169,7 +170,7 @@ struct PitchGridExquis: Exquis {
 
 				case COLORSCHEME_SCALE_COLOR_CIRCLE:
 
-
+					
 					if (note.scaleSeqNr != -1){
 
 						note.brightness = 1.f;
