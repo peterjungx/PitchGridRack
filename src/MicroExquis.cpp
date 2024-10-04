@@ -448,7 +448,6 @@ struct MicroExquis : Module {
 		}
 		exquis.showAllOctavesLayer();
 	}
-
 };
 
 struct MicroExquisDisplay: ExquisDisplay {
@@ -474,6 +473,7 @@ struct MicroExquisDisplay: ExquisDisplay {
 struct ExquisHexDisplay : Widget {
 	MicroExquis* module;
 	float hexsz = 5.8;
+	bool showScaleLabels = true;
 
 	void draw(const DrawArgs& args) override {
 		drawBackground(args);
@@ -520,18 +520,21 @@ struct ExquisHexDisplay : Widget {
 			}
 			nvgFill(args.vg);
 			
-			std::string name = module->exquis.scaleMapper.scale.canonicalNameForCoord(note->scaleCoord);
-			nvgFontSize(args.vg, name.length() > 3? 5: name.length() > 2? 6: 8);
-			nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-			if (note->playing){
-				nvgFillColor(args.vg, nvgRGB(0x0f, 0x0f, 0x0f));
-			} else if (note->scaleSeqNr!=-1){
-				nvgFillColor(args.vg, nvgRGB(0xff, 0xff, 0xff));
-			}else{
-				nvgFillColor(args.vg, nvgRGB(0x49, 0x49, 0x49));
+			if (showScaleLabels){
+				std::string name = module->exquis.scaleMapper.scale.canonicalNameForCoord(note->scaleCoord);
+				nvgFontSize(args.vg, name.length() > 3? 5: name.length() > 2? 6: 8);
+				nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+				if (note->playing){
+					nvgFillColor(args.vg, nvgRGB(0x0f, 0x0f, 0x0f));
+				} else if (note->scaleSeqNr!=-1){
+					nvgFillColor(args.vg, nvgRGB(0xff, 0xff, 0xff));
+				}else{
+					nvgFillColor(args.vg, nvgRGB(0x49, 0x49, 0x49));
+				}
+				
+				nvgText(args.vg, x, y, name.c_str(), NULL);				
 			}
-			
-			nvgText(args.vg, x, y, name.c_str(), NULL);
+
 
 
 		}else{
@@ -554,6 +557,12 @@ struct ExquisHexDisplay : Widget {
 		}
 		Widget::drawLayer(args, layer);
 	}	
+
+	void onButton(const event::Button& e) override {
+		if (e.action == GLFW_PRESS) {
+			showScaleLabels = !showScaleLabels;
+		}
+	}
 
 };
 

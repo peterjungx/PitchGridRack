@@ -63,6 +63,12 @@ public:
 	float F2(){
 		return f2;
 	};
+	float Log2F1(){
+		return log2f1;
+	};
+	float Log2F2(){
+		return log2f2;
+	};
 	float Offset(){
 		return offset;
 	};
