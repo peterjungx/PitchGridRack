@@ -61,7 +61,7 @@ struct MicroExquis : Module {
 		KEY_LABELS_NONE,
 		KEY_LABELS_SCALE,
 		KEY_LABELS_COORD
-	} keyLabels = KEY_LABELS_NONE;
+	} keyLabels = KEY_LABELS_SCALE;
 
 	ConsistentTuning tuning = ConsistentTuning({2, 5}, 2.f, {1, 3}, pow(2.f, 7.f/12.f)); // 12TET
 
@@ -178,7 +178,7 @@ struct MicroExquis : Module {
 			<< " (" <<  exquis.contFracDisplay(tuning.F2()) << ")";
 		tuningvector2_fr_text = ss2.str();
 
-		tuningbase_text = std::to_string(tuning.Offset()) + "V | " + std::to_string(tuning.OffsetAsStandardFreq()) + "Hz";
+		tuningbase_text = std::to_string(tuning.OffsetAsStandardFreq()) + "Hz (" + std::to_string(tuning.Offset()) + "V)";
 
 	}
 
@@ -196,14 +196,14 @@ struct MicroExquis : Module {
 		
 
 		if (badlyImplementedValueUpdateDividerTODOMakeProperly.process()){
-			//params[TUNING_OCTAVE_PARAM].setValue(tuning.vecToFreqRatioNoOffset(exquis.scaleMapper.scale.scale_class));
+			//params[TUNING_OCTAVE_PARAM].setValue(tuning.vecToFreqRatioNoOffset(exquis.scaleMapper.scale.scale_system));
 			//params[TUNING_PITCHANGLE_PARAM].setValue(tuning.vecToFreqRatioNoOffset({1,0}));
 			//params[SCALE_MODE_PARAM].setValue((float)exquis.scaleMapper.scale.mode/exquis.scaleMapper.scale.n);
 
-			exquis_tuningOctaveParam = tuning.vecToFreqRatioNoOffset(exquis.scaleMapper.scale.scale_class);
+			exquis_tuningOctaveParam = tuning.vecToFreqRatioNoOffset(exquis.scaleMapper.scale.scale_system);
 			exquis_tuningPitchAngleParam = 45.0f / M_2_PI * atan2(tuning.vecToFreqRatioNoOffset({1,0}), tuning.vecToFreqRatioNoOffset({0,1}));
-			exquis_scaleStepsAParam = exquis.scaleMapper.scale.scale_class.x;
-			exquis_scaleStepsBParam = exquis.scaleMapper.scale.scale_class.y;
+			exquis_scaleStepsAParam = exquis.scaleMapper.scale.scale_system.x;
+			exquis_scaleStepsBParam = exquis.scaleMapper.scale.scale_system.y;
 			exquis_scaleModeParam = (float)exquis.scaleMapper.scale.mode/exquis.scaleMapper.scale.n;
 
 			if (
@@ -250,12 +250,10 @@ struct MicroExquis : Module {
 		scaleStepsBParam = params[SCALE_STEPS_B_PARAM].getValue();
 		scaleModeParam = params[SCALE_MODE_PARAM].getValue();
 
-		uint8_t scaleStepsA = round(scaleStepsAParam);
-		uint8_t scaleStepsB = round(scaleStepsBParam);
-		uint8_t scaleMode = round(scaleModeParam * exquis.scaleMapper.scale.n);
-
-
-
+		//uint8_t scaleStepsA = round(scaleStepsAParam);
+		//uint8_t scaleStepsB = round(scaleStepsBParam);
+		//uint8_t scaleMode = round(scaleModeParam * exquis.scaleMapper.scale.n);
+		//
 		//if (
 		//	scaleStepsA != last_scaleStepsA || 
 		//	scaleStepsB != last_scaleStepsB || 
@@ -266,7 +264,7 @@ struct MicroExquis : Module {
 		//){
 		//	tuning.setParams({scaleStepsA, scaleStepsB}, tuningOctaveParam, {1, 0}, pow(2.f, tuningPitchAngleParam/45.f));
 		//	message = "A: " + std::to_string(scaleStepsA) + " B: " + std::to_string(scaleStepsB);
-		//	exquis.scaleMapper.scale.setScaleClass({scaleStepsA, scaleStepsB});
+		//	exquis.scaleMapper.scale.setScaleSystem({scaleStepsA, scaleStepsB});
 		//	exquis.scaleMapper.scale.mode = scaleMode;
 		//	exquis.showAllOctavesLayer();
 		//
@@ -381,10 +379,10 @@ struct MicroExquis : Module {
 
 		json_t* scaleJ = json_object();
 		json_object_set_new(rootJ, "scale", scaleJ);
-		json_t* scaleClassJ = json_array();
-		json_array_append_new(scaleClassJ, json_integer(exquis.scaleMapper.scale.scale_class.x));
-		json_array_append_new(scaleClassJ, json_integer(exquis.scaleMapper.scale.scale_class.y));
-		json_object_set_new(scaleJ, "class", scaleClassJ);
+		json_t* scaleSystemJ = json_array();
+		json_array_append_new(scaleSystemJ, json_integer(exquis.scaleMapper.scale.scale_system.x));
+		json_array_append_new(scaleSystemJ, json_integer(exquis.scaleMapper.scale.scale_system.y));
+		json_object_set_new(scaleJ, "system", scaleSystemJ);
 		json_object_set_new(scaleJ, "mode", json_integer(exquis.scaleMapper.scale.mode));
 
 		json_t* layoutJ = json_object();
@@ -445,17 +443,17 @@ struct MicroExquis : Module {
 		}
 		json_t* scaleJ = json_object_get(rootJ, "scale");
 		if (scaleJ && json_is_object(scaleJ)){
-			json_t* scaleClassJ = json_object_get(scaleJ, "class");
+			json_t* scaleSystemJ = json_object_get(scaleJ, "system");
 			json_t* modeJ = json_object_get(scaleJ, "mode");
 			if (
-				scaleClassJ && json_is_array(scaleClassJ) && json_array_size(scaleClassJ) == 2 && 
-				json_is_integer(json_array_get(scaleClassJ, 0)) && json_is_integer(json_array_get(scaleClassJ, 1)) && 
+				scaleSystemJ && json_is_array(scaleSystemJ) && json_array_size(scaleSystemJ) == 2 && 
+				json_is_integer(json_array_get(scaleSystemJ, 0)) && json_is_integer(json_array_get(scaleSystemJ, 1)) && 
 				modeJ && json_is_integer(modeJ)
 			){
-				int x = json_integer_value(json_array_get(scaleClassJ, 0));
-				int y = json_integer_value(json_array_get(scaleClassJ, 1));
+				int x = json_integer_value(json_array_get(scaleSystemJ, 0));
+				int y = json_integer_value(json_array_get(scaleSystemJ, 1));
 				int mode = json_integer_value(modeJ);
-				exquis.scaleMapper.scale.setScaleClass({x, y});
+				exquis.scaleMapper.scale.setScaleSystem({x, y});
 				exquis.scaleMapper.scale.mode = mode;
 				INFO("Scale loaded: %d %d %d", x, y, mode);
 			}
@@ -495,13 +493,15 @@ struct MicroExquisDisplay: ExquisDisplay {
 	MicroExquis* module;
 	void step() override {
 		if (module){
-			scalesystem_text = std::to_string(module->exquis.scaleMapper.scale.scale_class.y) + ";" + std::to_string(module->exquis.scaleMapper.scale.scale_class.x);
+			scalesystem_text = std::to_string(module->exquis.scaleMapper.scale.scale_system.y) + ";" + std::to_string(module->exquis.scaleMapper.scale.scale_system.x);
 			scalemode_text = "c" + std::to_string(module->exquis.scaleMapper.scale.mode+1);
 			tuningvector1_coord_text = module->tuningvector1_coord_text;
 			tuningvector1_fr_text = module->tuningvector1_fr_text;
 			tuningvector2_coord_text = module->tuningvector2_coord_text;
 			tuningvector2_fr_text = module->tuningvector2_fr_text;
 			tuningbase_text = module->tuningbase_text;
+			lastnote_name_text = module->exquis.lastNotePlayedNameLabel;
+			lastnote_text = module->exquis.lastNotePlayedLabel;
 			std::stringstream ss;
 			ss << std::fixed 
 				<< std::setprecision(2) 
@@ -569,7 +569,7 @@ struct ExquisHexDisplay : Widget {
 			std::string label;
 			switch (module->keyLabels){
 				case MicroExquis::KeyLabels::KEY_LABELS_SCALE:
-					label = module->exquis.scaleMapper.scale.canonicalNameForCoord(note->scaleCoord);
+					label = module->exquis.scaleMapper.scale.canonicalNameForCoord(note->scaleCoord, &(module->tuning));
 					nvgFontSize(args.vg, label.length() > 5? int(1.0*hexsz): int(1.3*hexsz));
 					nvgTextLetterSpacing(args.vg, -1.2);
 					nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
@@ -600,11 +600,57 @@ struct ExquisHexDisplay : Widget {
 					break;
 			}
 		}else{
-			nvgFillColor(args.vg, nvgRGB(0x79, 0x79, 0x79));
+			ExquisScaleMapper scaleMapper;
+			ConsistentTuning tuning = ConsistentTuning({2, 5}, 2.f, {1, 3}, 1.5f);
+			scaleMapper.flipVertically();
+			scaleMapper.rotatePlus60();
+			scaleMapper.rotatePlus60();
+			ExquisVector e_coord = {
+				index%11-5*((index%11)/6) + index/11,
+				2*(index/11)+(index%11)/6
+			};
+			ScaleVector s_coord = scaleMapper.exquis2scale(e_coord-scaleMapper.exquis_base);	
+			std::string label  = scaleMapper.scale.canonicalNameForCoord(s_coord, &tuning);
+			if (index==30){
+				setHSLFillColor(args, 0, true);
+			}else if (index==13 || index==47){
+				setHSLFillColor(args, 0, false);
+			}else if (index==12 || index==29 || index==46){
+				setHSLFillColor(args, 5, false);
+			}else if (index==2 || index==19 || index==36 || index==53){
+				setHSLFillColor(args, 3, false);
+			}else if (index==1 || index==18 || index==35 || index==52){
+				setHSLFillColor(args, 1, false);
+			}else if (index==0 || index==17 || index==34 || index==51){
+				setHSLFillColor(args, 6, false);
+			}else if (index==7 || index==24 || index==41 || index==58){
+				setHSLFillColor(args, 4, false);
+			}else if (index==6 || index==23 || index==40 || index==57){
+				setHSLFillColor(args, 2, false);
+			}else{
+				nvgFillColor(args.vg, nvgRGB(0x79, 0x79, 0x79));
+			}
 			nvgFill(args.vg);
+			drawKeyLabel(args, label, x, y, index);
 		}
 	}
+	void drawKeyLabel(const DrawArgs& args, std::string label, float x, float y, int index){
+		nvgFontSize(args.vg, label.length() > 5? int(1.0*hexsz): int(1.3*hexsz));
+		nvgTextLetterSpacing(args.vg, -1.2);
+		nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+		if (index==30 || index==13 || index==47 || index==12 || index==29 || index==46 || index==2 || index==19 || index==36 || index==53 || index==1 || index==18 || index==35 || index==52 || index==0 || index==17 || index==34 || index==51 || index==7 || index==24 || index==41 || index==58 || index==6 || index==23 || index==40 || index==57){
+			nvgFillColor(args.vg, nvgRGB(0xff, 0xff, 0xff));
+		}else{
+			nvgFillColor(args.vg, nvgRGB(0x49, 0x49, 0x49));
+		}
+		nvgText(args.vg, x, y, label.c_str(), NULL);			
+	}
 
+	void setHSLFillColor(const DrawArgs& args, int noteSeqNr, bool bright){
+		double r, g, b;
+		hsluv2rgb(360*posfmod(noteSeqNr/7.f + .106f, 1.f), 100.0, bright?70.0:30.0, &r, &g, &b);
+		nvgFillColor(args.vg, nvgRGB(127+127*r, 127+127*g, 127+127*b));
+	}
 	void drawScalePath(const DrawArgs& args){
 		nvgBeginPath(args.vg);
 

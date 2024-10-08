@@ -88,30 +88,30 @@ int inverseModulo(int a, int b);
 struct RegularScale {
 	// a regular scale 
 
-	ScaleVector scale_class = {1,1};
+	ScaleVector scale_system = {1,1};
 	int mode = 1; // 1=major
 	int n = 2;
 	int inverse_of_x = 1;
-	RegularScale(ScaleVector scale_class, int mode){
-		setScaleClass(scale_class);
+	RegularScale(ScaleVector scale_system, int mode){
+		setScaleSystem(scale_system);
 		this->mode = mode;
 		
 	}
-	void setScaleClass(ScaleVector scale_class){
-		this->scale_class = scale_class;
-		n = scale_class.x + scale_class.y;
+	void setScaleSystem(ScaleVector scale_system){
+		this->scale_system = scale_system;
+		n = scale_system.x + scale_system.y;
 		if (mode>=n){
 			mode = n-1;
 		}
-		inverse_of_x = inverseModulo(scale_class.x, n);
+		inverse_of_x = inverseModulo(scale_system.x, n);
 	}
 	ScaleVector scaleNoteSeqNrToCoord(int seqNr){
-		int x = (int)(scale_class.x * seqNr - 1.f * (n-(mode+1)) / n - .5f);
-		int y = (int)(scale_class.y * seqNr + 1.f * (n-(mode+1)) / n + .5f);
+		int x = (int)(scale_system.x * seqNr - 1.f * (n-(mode+1)) / n - .5f);
+		int y = (int)(scale_system.y * seqNr + 1.f * (n-(mode+1)) / n + .5f);
 		return {x, y};
 	}
 	int coordToScaleNoteSeqNr(ScaleVector c){
-		int d = c.x * scale_class.y - c.y * scale_class.x + (n-(mode+1)) ;
+		int d = c.x * scale_system.y - c.y * scale_system.x + (n-(mode+1)) ;
 		return d<0 ? -1 : d>=n ? -1 : (d + mode + 1) % n;
 	}
 
@@ -120,12 +120,16 @@ struct RegularScale {
 		return IntegerGCD(v.x, v.y) == 1;
 	}
 
-	std::string canonicalNameForCoord(ScaleVector c){
-		int d = -(c.x * scale_class.y - c.y * scale_class.x);
+	std::string canonicalNameForCoord(ScaleVector c, ConsistentTuning* tuning){
+		int d = -(c.x * scale_system.y - c.y * scale_system.x);
 		int diatonic_note = (inverse_of_x*d+100*n)%n+1;
 		//int diatonic_note = coordToScaleNoteSeqNr(c) + 1;
 		int accidentals = (d+1+100*n)/n-100;
 
+		bool flip_flat_sharp = tuning->vecToFreqRatioNoOffset({1,0}) > tuning->vecToFreqRatioNoOffset({0,1});
+		if (flip_flat_sharp){
+			accidentals = -accidentals;
+		}
 
 		std::string result = "";
 		while(accidentals>0){
@@ -150,13 +154,13 @@ struct RegularSubScale {
 	RegularScale base_scale = RegularScale({2,5}, 2);
 	std::vector<ScaleVector> scale_note_coords;
 
-	RegularSubScale(ScaleVector scale_class, int mode){
-		base_scale.setScaleClass(scale_class);
+	RegularSubScale(ScaleVector scale_system, int mode){
+		base_scale.setScaleSystem(scale_system);
 		base_scale.mode = mode;
 		setScaleNoteCoords();
 	}
-	RegularSubScale(ScaleVector scale_class, int mode, std::vector<ScaleVector> scale_note_offsets){
-		base_scale.setScaleClass(scale_class);
+	RegularSubScale(ScaleVector scale_system, int mode, std::vector<ScaleVector> scale_note_offsets){
+		base_scale.setScaleSystem(scale_system);
 		base_scale.mode = mode;
 		ScaleVector last = {0,0};
 		for (ScaleVector c : scale_note_offsets){

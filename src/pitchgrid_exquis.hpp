@@ -96,13 +96,6 @@ struct ExquisScaleMapper {
 
 ScaleVector ZERO_VECTOR = {0,0};
 
-template <typename T>
-T sin2pi_pade_05_5_4(T x) {
-	x -= 0.5f;
-	return (T(-6.283185307) * x + T(33.19863968) * simd::pow(x, 3) - T(32.44191367) * simd::pow(x, 5))
-	       / (1 + T(1.296008659) * simd::pow(x, 2) + T(0.7028072946) * simd::pow(x, 4));
-}
-
 
 float posfmod(float x, float y){
 	return fmod(x+100*y, y);
@@ -128,6 +121,10 @@ struct PitchGridExquis: Exquis {
 
 	bool didManualRetune = false;
 
+	std::string lastNotePlayedLabel = "";
+	std::string lastNotePlayedNameLabel = "";
+
+
 	enum ColorScheme {
 		COLORSCHEME_SCALE_MONOCHROME = 0,
 		COLORSCHEME_SCALE_COLOR_CIRCLE,
@@ -150,13 +147,13 @@ struct PitchGridExquis: Exquis {
 
 			note.scaleCoord = scaleMapper.exquis2scale(note.coord - scaleMapper.exquis_base);
 			note.scaleSeqNr = scaleMapper.scale.coordToScaleNoteSeqNr(note.scaleCoord);
-			float octave_fr = tuning ? tuning->vecToVoltageNoOffset(scaleMapper.scale.scale_class) - tuning->vecToVoltageNoOffset(ZERO_VECTOR) : 1.f;
+			float octave_fr = tuning ? tuning->vecToVoltageNoOffset(scaleMapper.scale.scale_system) - tuning->vecToVoltageNoOffset(ZERO_VECTOR) : 1.f;
 			switch(colorScheme){
 				case COLORSCHEME_SCALE_MONOCHROME:
 					if (note.scaleSeqNr != -1){
 						note.color = note.scaleSeqNr == 0 ? XQ_COLOR_EXQUIS_BLUE : XQ_COLOR_EXQUIS_YELLOW;
-						float r = note.scaleCoord * scaleMapper.scale.scale_class;
-						r /= scaleMapper.scale.scale_class * scaleMapper.scale.scale_class;
+						float r = note.scaleCoord * scaleMapper.scale.scale_system;
+						r /= scaleMapper.scale.scale_system * scaleMapper.scale.scale_system;
 						r = posfmod(r+.001f, 1.f);
 						note.brightness = note.scaleSeqNr == -1? 0.f : pow(6.f, - r);
 						if (note.scaleSeqNr == 0 && note.scaleCoord != ZERO_VECTOR){
@@ -167,10 +164,7 @@ struct PitchGridExquis: Exquis {
 						note.brightness = 0.f;
 					}
 					break;
-
 				case COLORSCHEME_SCALE_COLOR_CIRCLE:
-
-					
 					if (note.scaleSeqNr != -1){
 
 						note.brightness = 1.f;
@@ -179,7 +173,7 @@ struct PitchGridExquis: Exquis {
 						if (tuning){
 							h = (tuning->vecToVoltageNoOffset(note.scaleCoord)) / octave_fr;
 						}else{
-							h = (float)(note.scaleCoord * scaleMapper.scale.scale_class) / (scaleMapper.scale.scale_class * scaleMapper.scale.scale_class);
+							h = (float)(note.scaleCoord * scaleMapper.scale.scale_system) / (scaleMapper.scale.scale_system * scaleMapper.scale.scale_system);
 						}
 						h = 360.f * posfmod(h+.106f, 1.f);
 
@@ -196,7 +190,8 @@ struct PitchGridExquis: Exquis {
 						note.brightness = 0.f;
 					}
 					break;
-				
+				default:
+					break;
 			}
 		}
 		needsNoteDisplayUpdate = true;
@@ -210,7 +205,7 @@ struct PitchGridExquis: Exquis {
 	void showSingleOctaveLayer(){
 		showAllOctavesLayer();
 		for (ExquisNote& note : notes){
-			if (note.scaleCoord.x < 0 || note.scaleCoord.y < 0 || note.scaleCoord.x > scaleMapper.scale.scale_class.x || note.scaleCoord.y > scaleMapper.scale.scale_class.y){
+			if (note.scaleCoord.x < 0 || note.scaleCoord.y < 0 || note.scaleCoord.x > scaleMapper.scale.scale_system.x || note.scaleCoord.y > scaleMapper.scale.scale_system.y){
 				note.color = XQ_COLOR_BLACK;
 				note.brightness = 0.f;
 			}
@@ -232,29 +227,29 @@ struct PitchGridExquis: Exquis {
 		}
 	}
 
-	ScaleVector scaleClassForNote(ExquisNote* note){
-		ScaleVector scaleClass = ScaleVector(note->coord-scaleSelectModeBaseNode);
-		scaleClass = {scaleClass.y, scaleClass.x};
-		return scaleClass;
+	ScaleVector scaleSystemForNote(ExquisNote* note){
+		ScaleVector scaleSystem = ScaleVector(note->coord-scaleSelectModeBaseNode);
+		scaleSystem = {scaleSystem.y, scaleSystem.x};
+		return scaleSystem;
 	}
 
-	void showScaleClassSelectLayer(){
+	void showScaleSystemSelectLayer(){
 		for (ExquisNote& note : notes){
 
-			ScaleVector scaleClass = scaleClassForNote(&note);
+			ScaleVector scaleSystem = scaleSystemForNote(&note);
 
-			if (scaleClass.x > 0 && scaleClass.y > 0){
-				// scale class selection area
-				if (scaleMapper.scale.isCoprimeScaleVector(scaleClass)){
+			if (scaleSystem.x > 0 && scaleSystem.y > 0){
+				// scale system selection area
+				if (scaleMapper.scale.isCoprimeScaleVector(scaleSystem)){
 					note.brightness = .7f;
-					if (scaleClass == scaleMapper.scale.scale_class){
+					if (scaleSystem == scaleMapper.scale.scale_system){
 						note.color = XQ_COLOR_EXQUIS_BLUE;
-					}else if (scaleClass == ScaleVector(2,5)){
+					}else if (scaleSystem == ScaleVector(2,5)){
 						note.color = Color(127,45,0);
 					}else {
 						note.color = XQ_COLOR_EXQUIS_YELLOW;
 					}
-					if (scaleClass == scaleMapper.scale.scale_class){
+					if (scaleSystem == scaleMapper.scale.scale_system){
 						selectedScaleNote.startWithNote(&note);
 					}
 				}else{
@@ -262,13 +257,13 @@ struct PitchGridExquis: Exquis {
 					note.brightness = 0.f;
 				}
 				
-			}else if (scaleClass.x < 0){
+			}else if (scaleSystem.x < 0){
 				note.color = XQ_COLOR_BLACK;
 				note.brightness = 0.f;
-			}else if (scaleClass.y < 0){
+			}else if (scaleSystem.y < 0){
 				note.color = XQ_COLOR_BLACK;
 				note.brightness = 0.f;
-			}else if (scaleClass == ZERO_VECTOR){
+			}else if (scaleSystem == ZERO_VECTOR){
 				// origin
 				note.color = XQ_COLOR_EXQUIS_BLUE;
 				note.brightness = 1.f;
@@ -297,13 +292,13 @@ struct PitchGridExquis: Exquis {
 	void exitTuningIntervalSelectionMode(){
 		if (tuningModeOn){
 			if (!tuningConstantNoteSelected){
-				if (tuningModeRetuneInterval != ZERO_VECTOR && tuningModeRetuneInterval != scaleMapper.scale.scale_class){
+				if (tuningModeRetuneInterval != ZERO_VECTOR && tuningModeRetuneInterval != scaleMapper.scale.scale_system){
 					tuningConstantNoteSelected = true;
-					tuningModeConstantInterval = scaleMapper.scale.scale_class;
+					tuningModeConstantInterval = scaleMapper.scale.scale_system;
 					// find note for interval of equivalence (octave)
 					ExquisNote* note = NULL;
 					for (ExquisNote& n: notes){
-						if (n.scaleCoord == scaleMapper.scale.scale_class){
+						if (n.scaleCoord == scaleMapper.scale.scale_system){
 							note = &n;
 							break;
 						}
@@ -328,7 +323,7 @@ struct PitchGridExquis: Exquis {
 	}
 	void enterScaleSelectMode(){
 		stopTuningMode();
-		showScaleClassSelectLayer();
+		showScaleSystemSelectLayer();
 		scaleSelectModeOn = true;
 	}
 	void exitScaleSelectMode(){
@@ -343,16 +338,16 @@ struct PitchGridExquis: Exquis {
 		if (tuningModeRetuneInterval == ZERO_VECTOR){
 			// change offset
 			tuning->setOffset(tuning->Offset() + 0.001*amount);
-		}else if (tuningModeRetuneInterval == scaleMapper.scale.scale_class && !tuningConstantNoteSelected){
+		}else if (tuningModeRetuneInterval == scaleMapper.scale.scale_system && !tuningConstantNoteSelected){
 			// proportional stretch tuning
-			float logf1 = tuning->vecToVoltageNoOffset( scaleMapper.scale.scale_class );
-			ScaleVector v2 = tuning->V1() == scaleMapper.scale.scale_class ? tuning->V2() : tuning->V1();
-			float logf2 = tuning->V1() == scaleMapper.scale.scale_class ? tuning->Log2F2() : tuning->Log2F1();
+			float logf1 = tuning->vecToVoltageNoOffset( scaleMapper.scale.scale_system );
+			ScaleVector v2 = tuning->V1() == scaleMapper.scale.scale_system ? tuning->V2() : tuning->V1();
+			float logf2 = tuning->V1() == scaleMapper.scale.scale_system ? tuning->Log2F2() : tuning->Log2F1();
 
 			float new_logf1 = logf1 + amount/1200.f;
 			float new_logf2 = logf2 + logf2/logf1 * amount/1200.f;
 
-			tuning->setParams(scaleMapper.scale.scale_class, pow(2.f, new_logf1), v2, pow(2.f, new_logf2));
+			tuning->setParams(scaleMapper.scale.scale_system, pow(2.f, new_logf1), v2, pow(2.f, new_logf2));
 
 		}else{
 			float retune_f = tuning->vecToFreqRatioNoOffset(tuningModeRetuneInterval);
@@ -447,7 +442,7 @@ struct PitchGridExquis: Exquis {
 						case 6: // octave down
 							if (value == 1){
 								// apply offset equal to octave to tuning
-								float octave_freq_ratio = tuning->vecToFreqRatioNoOffset(scaleMapper.scale.scale_class);
+								float octave_freq_ratio = tuning->vecToFreqRatioNoOffset(scaleMapper.scale.scale_system);
 								float new_offset = tuning->Offset() - log2(octave_freq_ratio);
 								tuning->setOffset(new_offset);
 							}
@@ -455,7 +450,7 @@ struct PitchGridExquis: Exquis {
 						case 7: // octave up
 							if (value == 1){
 								// apply offset equal to octave to tuning
-								float octave_freq_ratio = tuning->vecToFreqRatioNoOffset(scaleMapper.scale.scale_class);
+								float octave_freq_ratio = tuning->vecToFreqRatioNoOffset(scaleMapper.scale.scale_system);
 								float new_offset = tuning->Offset() + log2(octave_freq_ratio);
 								tuning->setOffset(new_offset);
 							}
@@ -577,7 +572,7 @@ struct PitchGridExquis: Exquis {
 					tuningModeRetuneInterval = selectedInterval;
 					tuningRetuneNote.startWithNote(note);
 					tuningModeOn = true;
-				} else if (note->scaleSeqNr>=0 && selectedInterval.x >= 0 && selectedInterval.y >= 0 && selectedInterval.x <= scaleMapper.scale.scale_class.x && selectedInterval.y <= scaleMapper.scale.scale_class.y){
+				} else if (note->scaleSeqNr>=0 && selectedInterval.x >= 0 && selectedInterval.y >= 0 && selectedInterval.x <= scaleMapper.scale.scale_system.x && selectedInterval.y <= scaleMapper.scale.scale_system.y){
 					if (tuningConstantNoteSelected){
 						tuningConstantNoteSelected = false;
 						tuningConstantNote.stop();
@@ -613,12 +608,12 @@ struct PitchGridExquis: Exquis {
 				uint8_t noteId = msg.getNote();
 				
 				ExquisNote* note = getNoteByMidinote(noteId);
-				ScaleVector scaleClass = scaleClassForNote(note);
-				if (scaleClass.x > 0 && scaleClass.y > 0 && scaleMapper.scale.isCoprimeScaleVector(scaleClass)){
-					scaleMapper.scale.setScaleClass(scaleClass);
+				ScaleVector scaleSystem = scaleSystemForNote(note);
+				if (scaleSystem.x > 0 && scaleSystem.y > 0 && scaleMapper.scale.isCoprimeScaleVector(scaleSystem)){
+					scaleMapper.scale.setScaleSystem(scaleSystem);
 					selectedScaleNote.startWithNote(note);
 				}
-				showScaleClassSelectLayer();
+				showScaleSystemSelectLayer();
 			}
 		} else if (arrangeModeOn){
 			// react to button presses in arrange mode
@@ -637,6 +632,15 @@ struct PitchGridExquis: Exquis {
 			uint8_t noteId = msg.getNote();
 			ExquisNote* note = getNoteByMidinote(noteId);
 			note->playing = true;
+
+			if (tuning){
+				lastNotePlayedNameLabel = scaleMapper.scale.canonicalNameForCoord(note->scaleCoord, tuning) + " (" + std::to_string(note->scaleCoord.y) + "," +  std::to_string(note->scaleCoord.x) + ")";
+				std::stringstream ss1;
+				float note_fr = tuning->vecToFreqRatioNoOffset(note->scaleCoord);
+				ss1 << std::fixed << std::setprecision(1) << 1200*log2(note_fr) << "ct"
+					<< " (" <<  contFracDisplay(note_fr) << ")";
+				lastNotePlayedLabel = ss1.str();
+			}
 		}else if (msg.getStatus()==0x8){
 			// note off
 			uint8_t noteId = msg.getNote();

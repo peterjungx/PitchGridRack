@@ -152,6 +152,8 @@ struct VOctMapper : Module {
 			case TuningPresets::TUNING_31TET:
 				tuning.setParams(2, 5, 2.f, 1, 0, pow(2.f, 3.f/31.f));
 				break;
+			default:
+				break;
 		}
 
 	}

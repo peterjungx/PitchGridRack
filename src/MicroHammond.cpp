@@ -298,6 +298,8 @@ struct VCOMH : Module {
 			case TuningPresets::TUNING_31TET:
 				tuning.setParams({2, 5}, 2.f, {1, 0}, pow(2.f, 3.f/31.f));
 				break;
+			default:
+				break;
 		}
 	
 		if (tuningPreset == TuningPresets::TUNING_HARMONIC) {
@@ -426,14 +428,14 @@ struct VCOMH : Module {
 
 
 
-				params[RELFREQ1_PARAM].setValue(tuning.vecToFreqRatio(-scale.scale_class));
+				params[RELFREQ1_PARAM].setValue(tuning.vecToFreqRatio(-scale.scale_system));
 				params[RELFREQ2_PARAM].setValue(tuning.vecToFreqRatio(tuning.V1()));
-				params[RELFREQ4_PARAM].setValue(tuning.vecToFreqRatio(scale.scale_class));
-				params[RELFREQ5_PARAM].setValue(tuning.vecToFreqRatio(tuning.V1()+scale.scale_class));
-				params[RELFREQ6_PARAM].setValue(tuning.vecToFreqRatio(scale.scale_class*2));
-				params[RELFREQ7_PARAM].setValue(tuning.vecToFreqRatio(tuning.V2()+scale.scale_class*2));
-				params[RELFREQ8_PARAM].setValue(tuning.vecToFreqRatio(tuning.V1()+scale.scale_class*2));
-				params[RELFREQ9_PARAM].setValue(tuning.vecToFreqRatio({3*scale.scale_class.x, 3*scale.scale_class.y}));
+				params[RELFREQ4_PARAM].setValue(tuning.vecToFreqRatio(scale.scale_system));
+				params[RELFREQ5_PARAM].setValue(tuning.vecToFreqRatio(tuning.V1()+scale.scale_system));
+				params[RELFREQ6_PARAM].setValue(tuning.vecToFreqRatio(scale.scale_system*2));
+				params[RELFREQ7_PARAM].setValue(tuning.vecToFreqRatio(tuning.V2()+scale.scale_system*2));
+				params[RELFREQ8_PARAM].setValue(tuning.vecToFreqRatio(tuning.V1()+scale.scale_system*2));
+				params[RELFREQ9_PARAM].setValue(tuning.vecToFreqRatio({3*scale.scale_system.x, 3*scale.scale_system.y}));
 
 
 			}

@@ -1,20 +1,33 @@
 # PitchGrid Modules for VCV Rack
 
-## What is this? (TL;DR)
+The biodiversity in the area of tunings is rapidly shrinking: Everything is converging toward the 12-TET (mediated by the piano keyboard). PitchGrid is an answer to this cultural decay. We need tools that make it easy to play in arbitrary tunings.
 
-Okay, so let's assume you are the adventurous kind of musician who wants to know what lies beyond the standard tuning, maybe because you are excited by oriental music. Therefore, you want to go beyond equal temperament and want to try out, say, 1/4-comma Meantone (an important temperament in medeival times). And let's assume it was easy to do just that. Chances are you would not be too much satisfied with the result. While there might be multiple reasons as to why this might be so, one issue you definitely will stumble upon is that your instrument's timbre might not fit your new tuning. Tuning and timbre are commonly dealt with completely separately from each other, because it is easier to conceptualize and to work with, especially within your typical DAW. But in reality they are intimately connected. 
+The [PitchGrid](https://pitchgrid.io/scalemapper) generalizes the structure within Western tonality, including diatonic scales, harmonies, key changes, notation, to a much larger class of scales. The PitchGrid Modules for VCV Rack allow you to explore the resulting structures in an intuitive and powerful way.
 
-At this early stage, the PitchGrid modules aim at making the interaction between tuning and timbre explicitly experienceable. Select your tuning with the **Microtonal V/OCT Mapper** and change the timbre of the **Microtonal Hammond**, (a nine oscillator VCO module featuring the typical overtones of a Hammond organ, but with overtones matching a chosen tuning), and hear the interactions. 
+If you have an [Exquis](https://dualo.com/exquis/?utm_source=VCVplugin) by Intuitive Instruments at hand, you are lucky. As an MPE controller with an isomorphic keyboard layout, it is a perfect fit for exploring a universe of scales. Together with the **Microtonal Exquis** module, selecting scales, re-tuning and tempering them, as well as configuring the note layout -- all via the Exquis' interface -- is a breeze. It also allows you to interactively retune, transpose and scramble melodies and harmonies in a structurally sensible way. 
 
-## Intro
+To make arbitrary scales sound pleasing, use **reverse tuning**. Normal tuning is finding pitches that fit a given overtone spectrum, as in the Pythagorean tuning procedure. **Reverse tuning** starts with a tuned scale, and adjusts the spectrum of the sound to fit the chosen scale, leading to consonance. This results in unusual timbres. This is a departure from the usual way, where we think of tuning and timbre separately. The PitchGrid modules make the intimate connection between tuning and timbre directly experienceable. 
 
-The tonal structure of Western music is two-dimensional, and is induced by the two different tone sizes as well as the desire to change keys. All notes are located on a 2-d lattice that I call the PitchGrid. On the PitchGrid, all equal temperaments (12-TET, 19-TET, 31-TET, etc.) and historically relevant regular temperaments (notably Pythagorean tuning and all Meantone temperaments) can be reproduced by a simple tilt of the axis of constant pitch. Non-conventional regular temperaments like the 5-limit tuning, which lift the assumption *octave equals 2/1 frequency ratio*, are also readily available. I am dedicated to the exploration of the implications of this realization. Visit the [PitchGrid Web App](https://pitchgrid.io) to get a taste. 
+The **Microtonal Hammond** module is an organ-like VCO featuring nine tunable sine waves. Tuning is achieved either by patching with the **Microtonal Exquis** module, which forwards scale and tuning information via the _TDAT_ connector, or via selecting one of several presets for the Western scale (see below). At this stage, if you don't have the [Exquis](https://dualo.com/exquis/?utm_source=VCVplugin), you still can experience some preconfigured tunings for the Western scale and see how tuning and timbre interact. Use the **Microtonal V/OCT Mapper** to map MIDI notes to a tempered **V/OCT** signal.
+
+More VCV Modules featuring microtonality and reverse tuning are planned. Stay tuned.
+
+## About the PitchGrid Concept
+
+The tonal structure of Western music is two-dimensional, and is induced by the two different tone sizes as well as the desire to change keys. All notes are located on a 2-d lattice, the PitchGrid. On the PitchGrid, all equal temperaments (12-TET, 19-TET, 31-TET, etc.) and historically relevant regular temperaments (notably Pythagorean tuning and all Meantone temperaments) can be reproduced by a simple tilt of the axis of constant pitch. (see the [PitchGrid Web App](https://pitchgrid.io/)) Non-conventional regular temperaments like the 1/2-comma Cleantone temperament, which lift the assumption *octave equals 2/1 frequency ratio*, are also readily available. 
+
+But most importantly, you now can leave the Western tonal universe altogether and explore what lies beyond it. The [PitchGrid ScaleMapper Web App](https://pitchgrid.io/scalemapper) showcases not only a unified framework for thinking about regular scales, but also devises a new and unique way of mapping between any of those scales.
 
 To make my theoretical explorations audible and playable for the practicing musician, I am here releasing some VCV Rack modules that implement some of the ideas. The goal is both educational and practical. I believe there is a whole unexplored universe lying beyond the twelve semitones per octave idea that we Westerners are raised with. I can't possibly explore that universe on my own. I want to build tools that make it easy for you, the musician, to transgress the boundaries, and to join me on my journey. The first step is to make you see (or rather, hear) that there indeed is the unknown hidden in plain sight. This is what this VCV Rack modules are about today. They eventually will evolve into practical tools, with your valuable feedback. 
 
 ## VCV Rack Modules
 
-Tuning and timbre are intimately connected. The PitchGrid Modules for VCV Rack allow you to explore this intimate connection in a (virtual) modular setting. 
+### Microtonal Exquis
+
+The PitchGrid Microtonal Exquis (or MicroExquis for short) is a module in the VCV Rack PitchGrid plugin. Its purpose is to provide a means to explore different tunings, scales and hexagonal keyboard layouts via the [Exquis MPE controller by Intuitive Instruments](https://dualo.com/exquis/?utm_source=VCVplugin).
+
+
+
 
 ### Microtonal V/OCT Mapper
 

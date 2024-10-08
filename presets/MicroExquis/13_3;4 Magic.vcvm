@@ -1,0 +1,75 @@
+{
+  "plugin": "PitchGrid",
+  "model": "MicroExquis",
+  "version": "2.0.2",
+  "params": [
+    {
+      "value": 2.0,
+      "id": 0
+    },
+    {
+      "value": 50.382530212402344,
+      "id": 1
+    },
+    {
+      "value": 0.0,
+      "id": 2
+    },
+    {
+      "value": 0.0,
+      "id": 3
+    },
+    {
+      "value": 4.0,
+      "id": 4
+    },
+    {
+      "value": 3.0,
+      "id": 5
+    },
+    {
+      "value": 0.0,
+      "id": 6
+    },
+    {
+      "value": 0.0,
+      "id": 7
+    }
+  ],
+  "data": {
+    "tuning": {
+      "vec1": [
+        2,
+        2
+      ],
+      "f1": 1.5491933822631836,
+      "vec2": [
+        0,
+        1
+      ],
+      "f2": 1.2000000476837158,
+      "offset": 0.0
+    },
+    "scale": {
+      "system": [
+        4,
+        3
+      ],
+      "mode": 2
+    },
+    "layout": {
+      "base": [
+        5,
+        5
+      ],
+      "interval1": [
+        10,
+        2
+      ],
+      "interval2": [
+        8,
+        3
+      ]
+    }
+  }
+}

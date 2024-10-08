@@ -10,8 +10,8 @@ union {
 
 
 struct DataLink {
-    FloatUnion START_MESSAGE = {012, 013, 014, 015};
-    FloatUnion END_MESSAGE = {012, 013, 014, 016};
+    FloatUnion START_MESSAGE = {{0x54, 0x44, 0x41, 0x06}};
+    FloatUnion END_MESSAGE = {{0x54, 0x44, 0x41, 0x0D}};
     std::vector<FloatUnion> dataRed;
     std::vector<FloatUnion> dataBlue;
     unsigned int num_values = 0;

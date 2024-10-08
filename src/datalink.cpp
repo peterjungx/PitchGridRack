@@ -119,8 +119,8 @@
         addIntValue(tuning->V2().x);
         addIntValue(tuning->V2().y);
         addFloatValue(tuning->F2());
-        addIntValue(scale->scale_class.x);
-        addIntValue(scale->scale_class.y);
+        addIntValue(scale->scale_system.x);
+        addIntValue(scale->scale_system.y);
         addIntValue(scale->mode);
     };
     void TuningDataSender::setTuningData(ConsistentTuning* tuning, RegularScale* scale){
@@ -132,8 +132,8 @@
         setIntValue(3, v.x);
         setIntValue(4, v.y);
         setFloatValue(5, tuning->F2());
-        setIntValue(6, scale->scale_class.x);
-        setIntValue(7, scale->scale_class.y);
+        setIntValue(6, scale->scale_system.x);
+        setIntValue(7, scale->scale_system.y);
         setIntValue(8, scale->mode);
     };
 
@@ -146,7 +146,7 @@
     }
     void TuningDataReceiver::getTuningData(ConsistentTuning* tuning, RegularScale* scale){
         tuning->setParams({getIntValue(0), getIntValue(1)}, getFloatValue(2), {getIntValue(3), getIntValue(4)}, getFloatValue(5));
-        scale->setScaleClass({getIntValue(6), getIntValue(7)});
+        scale->setScaleSystem({getIntValue(6), getIntValue(7)});
         scale->mode = getIntValue(8);
     };
 
