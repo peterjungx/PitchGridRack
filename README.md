@@ -29,6 +29,25 @@ The PitchGrid Microtonal Exquis (or MicroExquis for short) is a module in the VC
 See the [Documentation for the MicroExquis](docs/PitchGrid%20MicroExquis.pdf) for details.
 
 
+### Microtonal Hammond
+
+A Hammond Organ is a perfect model system for a tunable timbre. The overtones are, to a very good approximation, tuned to a 12-TET temperament, the same as the available pitches. In fact, the sound source of the overtones and the fundamentals are the same by construction. Arguably this is what makes the sound of the Hammond Organ special: Its timbre better fits the 12 tone equal temperament than an harmonic spectrum. (In a harmonic spectrum, the 3rd, 5th and 6th overtones are just ratios. On the Hammond, they are derived from the Perfect 5th and the Major 3rd from the above octaves of the 12-TET the organ is tuned to.) In this sense, the Hammond organ already employs reverse tuning to the 12-TET.
+
+The **Microtonal Hammond** allows to reverse tune its overtones (controlled by the "drawbar" knobs) to an arbitrary scale, via the _TDAT_ connector.  
+
+#### Usage
+
+- Adjust the eight amplitude trimpots that correspond to eight of the nine drawbars on the Hammond (I have spared the one for the fundamental, that I quietly assume should be at full power). These represent:
+  - **1/2'** Sub-harmonic, -1 octave from the fundamental
+  - **3/2'** ~3rd harmonic of the sub-harmonic octave, +perfect fifth from the fundamental
+  - **2'** 2nd harmonic of the fundamental, +1 octave from the fundamental
+  - **3'** ~3rd harmonic of the fundamental, +perfect fifth from 1st octave
+  - **4'** 4th harmonic of the fundamental, +2 octave from the fundamental
+  - **5'** ~5th harmonic of the fundamental, +major third from 2nd octave
+  - **6'** ~6th harmonic of the fundamental, +perfect fifth from 2nd octave
+  - **8'** 8th harmonic of the fundamental, +3 octave from the fundamental
+- Connect the _TDAT_ connector from the _MicroExquis_ or select a tuning from the context menu (right-click on the module).
+  
 ### Microtonal V/OCT Mapper
 
 By convention, modular VCO's frequency are controlled by a 1V/octave signal, with a strictly exponential mapping of voltage to frequency. The **Microtonal V/OCT Mapper** will adjust this V/OCT signal in such a way that makes it easy to match the pitches of a selected temperament. The output will be a mapped V/OCT signal, or **MV/OCT**, for short.
@@ -44,43 +63,8 @@ In any tuning besides 12-TET, F# and Gb have different pitches. Thus, there is a
   - **G#** Black keys are C# Eb F# G# Bb
   - **D#** Black keys are C# D# F# G# Bb
   - **All sharp (A#)** Black keys are C# D# F# G# A#
-- Select a tuning from the context menu (right-click on the module):
-  - **Original Hammond (12-TET)** The original tuning of the Hammond organ. What we all are used to.
-  - **19-TET** In 19-TET, a half step gets assigned 2/19-th of an octave and the whole step 3/19-th. Close to 1/3-comma meantone.
-  - **31-TET** A half step gets assigned 3/31-th of an octave and the whole step 5/31-th. Close to 1/4-comma meantone.
-  - **Pythagorean** The octave gets assigned the just frequency ratio 2/1 and the perfect fifth the just frequency ratio 3/2. The origin of all Western music. Good tuning to keep the perfect 5th stable.
-  - **1/4-comma meantone** The octave gets assigned the frequency ratio 2/1 and the major third 5/4. Good for pieces in major. Historically relevant in medeival music.
-  - **1/3-comma meantone** The octave gets assigned the frequency ratio 2/1 and the minor third 6/5. Good for pieces in minor.
-  - **5-limit (1/2-comma Cleantone)** The perfect fifth is 3/2 and the major third is 5/4. Consequently the minor third becomes just, too, at 6/5. All (non-inverted) triads and 7th chords are just(!). Octave is ~10ct wider than just 2/1. Mathematically proven to be the *best sounding temperament for Western music* (according to some measures) in the [Musical Tonality Paper](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4452394) by Hans-Peter Deutsch.
-  - **7-limit (P5=3/2 m3=7/6)** Experimental tuning in which all triads are just with 7th-harmonic based just intervals (minor 3rd =7/6 and Major 3rd =9/7). The octave becomes narrower than just 2/1 by about 20ct. Has distinctly Kafkaesque qualities.
+- Select one of the available tunings from the context menu (right-click on the module).
 
-
-### Microtonal Hammond
-
-Both the pitches and the timbre of Hammond organs are (to a good approximation) tuned to 12-TET. It is commonly assumed that the magic of the Hammond organ derives from the slight deviations from the precise equal temperament, that are dictated by the gear ratios driving the tone wheels (besides of course from the characteristic clickiness of note onsets and the rotary speakers, which we are not concerned with here). It is however my hypothesis that a lot of the magic derives from the fact that the partials (controlled by the drawbar) are tuned to the scale played. (In fact, in the Hammond Organ, they derive from exactly the same sound source, the rotating tone wheels.) 
-
-If this hypothesis is true, the original Hammond timbre can only sound good when played in 12-TET. If you want to play other temperaments and want the Hammond sound to still do its magic, you necessarily have to adjust the timbre, as well. The **Microtonal Hammond** module does just that.
-
-#### Usage
-
-- Adjust the eight amplitude trimpots that correspond to eight of the nine drawbars on the Hammond (I have spared the one for the fundamental, that I quietly assume you always want to hear at full power). These represent:
-  - **1/2** Sub-harmonic, -1 octave from the fundamental
-  - **3/2** ~3rd harmonic of the sub-harmonic octave, +perfect fifth from the fundamental
-  - **2** 2nd harmonic of the fundamental, +1 octave from the fundamental
-  - **3** ~3rd harmonic of the fundamental, +perfect fifth from 1st octave
-  - **4** 4th harmonic of the fundamental, +2 octave from the fundamental
-  - **5** ~5th harmonic of the fundamental, +major third from 2nd octave
-  - **6** ~6th harmonic of the fundamental, +perfect fifth from 2nd octave
-  - **8** 8th harmonic of the fundamental, +3 octave from the fundamental
-- Select a tuning from the context menu (right-click on the module):
-  - **Original Hammond (12-TET)** The original tuning of the Hammond organ. What we all are used to.
-  - **19-TET** In 19-TET, a half step gets assigned 2/19-th of an octave and the whole step 3/19-th. Close to 1/3-comma meantone.
-  - **31-TET** A half step gets assigned 3/31-th of an octave and the whole step 5/31-th. Close to 1/4-comma meantone.
-  - **Pythagorean** The octave gets assigned the just frequency ratio 2/1 and the perfect fifth the just frequency ratio 3/2. The origin of all Western music. Good tuning to keep the perfect 5th stable.
-  - **1/4-comma meantone** The octave gets assigned the frequency ratio 2/1 and the major third 5/4. Good for pieces in major. Historically relevant in medeival music.
-  - **1/3-comma meantone** The octave gets assigned the frequency ratio 2/1 and the minor third 6/5. Good for pieces in minor.
-  - **5-limit (1/2-comma Cleantone)** The perfect fifth is 3/2 and the major third is 5/4. Consequently the minor third becomes just, too, at 6/5. All (non-inverted) triads and 7th chords are just(!). Octave is ~10ct wider than just 2/1. Mathematically proven to be the *best sounding temperament for Western music* (according to some measures) in the [Musical Tonality Paper](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4452394) by Hans-Peter Deutsch.
-  - **7-limit (P5=3/2 m3=7/6)** Experimental tuning in which all triads are just with 7th-harmonic based just intervals (minor 3rd =7/6 and Major 3rd =9/7). The octave becomes narrower than just 2/1 by about 20ct. Has distinctly Kafkaesque qualities.
 
 ## Building
 
