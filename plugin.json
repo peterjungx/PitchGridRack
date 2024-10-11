@@ -8,7 +8,7 @@
   "authorEmail": "peterjungx@gmail.com",
   "pluginUrl": "https://github.com/peterjungx/PitchGridRack",
   "authorUrl": "https://pitchgrid.io",
-  "manualUrl": "https://github.com/peterjungx/PitchGridRack",
+  "manualUrl": "https://pitchgrid.io/info/MicroExquis",
   "sourceUrl": "https://github.com/peterjungx/PitchGridRack",
   "changelogUrl": "",
   "minRackVersion": "2.4.0",
@@ -17,7 +17,7 @@
       "slug": "MicroExquis",
       "name": "Microtonal Exquis Interface",
       "description": "Microtonal interface to the Exquis by Intuitive Instruments",
-      "manualUrl": "https://peterjungx.github.io/PitchGridRack/docs/PitchGrid%20MicroExquis.pdf",
+      "manualUrl": "https://pitchgrid.io/info/MicroExquis",
       "tags": [
         "External",
         "MIDI",
