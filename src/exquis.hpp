@@ -235,13 +235,13 @@ struct Exquis {
 		for (int driver_id : midi::getDriverIds()){
 			midi::Driver* driver = midi::getDriver(driver_id);
 			for (int device_id : driver->getOutputDeviceIds()){
-				if (driver->getOutputDeviceName(device_id) == "Exquis"){
+				if (driver->getOutputDeviceName(device_id).rfind( "Exquis", 0)==0){
 					midi_output.setDriverId(driver_id);
 					midi_output.setDeviceId(device_id);
 				}
 			}
 			for (int device_id : driver->getInputDeviceIds()){
-				if (driver->getInputDeviceName(device_id) == "Exquis"){
+				if (driver->getInputDeviceName(device_id).rfind( "Exquis", 0)==0){
 					midi_input.setDriverId(driver_id);
 					midi_input.setDeviceId(device_id);
 					connected = true;
