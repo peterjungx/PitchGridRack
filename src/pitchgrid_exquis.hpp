@@ -6,6 +6,7 @@
 
 #include "hsluv.h"
 
+
 struct ExquisScaleMapper {
 	RegularScale scale = RegularScale({2,5},1);
 	ExquisVector exquis_base = {5,5}, exquis_interval1 = {8,7}, exquis_interval2={7,6};
@@ -28,8 +29,6 @@ struct ExquisScaleMapper {
 	void calcTransforms(){
 		transform_e2s = findTransform(exquis_interval1 - exquis_base, scale_interval1, exquis_interval2 - exquis_base, scale_interval2);
 		transform_s2e = findTransform(scale_interval1, exquis_interval1 - exquis_base, scale_interval2, exquis_interval2 - exquis_base);
-
-
 	}
 	ScaleVector exquis2scale(ExquisVector c){
 		return transform_e2s * c;

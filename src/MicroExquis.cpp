@@ -21,6 +21,8 @@ to explore
 
 #include "exquis_display.hpp"
 
+#include "libMTSMaster.h"
+
 using simd::float_4;
 using simd::int32_4;
 
@@ -101,6 +103,8 @@ struct MicroExquis : Module {
 	bool initialized = false;
 	bool last_key_param_state_low = true;
 
+	bool is_mts_esp_master = false;
+
 	//std::string tuning_info_string1 = "";
 	//std::string tuning_info_string2 = "";
 
@@ -111,6 +115,8 @@ struct MicroExquis : Module {
 	std::string tuningbase_text = "";
 
 	TuningDataSender tuningDataSender = TuningDataSender();
+
+
 
 	MicroExquis() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -146,13 +152,39 @@ struct MicroExquis : Module {
 		//rgb2hsluv(r, g, b, &h, &s, &l);
 		//INFO("rgb2hsluv: %f %f %f -> %f %f %f", r, g, b, h, s, l);
 
+		if (MTS_CanRegisterMaster()){
+			MTS_RegisterMaster();
+			is_mts_esp_master = true;
+			INFO("MTS ESP Master registered");
+		}else{
+			bool has_ipc = MTS_HasIPC();
+			int num_clients = MTS_GetNumClients();
+			INFO("MTS ESP Master not registered. IPC: %d, Num Clients: %d", has_ipc, num_clients);
+			if (has_ipc && num_clients == 0){
+				MTS_Reinitialize();
+				INFO("MTS ESP Reinitialized");
+				if (MTS_CanRegisterMaster()){
+					MTS_RegisterMaster();
+					is_mts_esp_master = true;
+					INFO("MTS ESP Master registered");
+				}
+			}
+		}
+
+	}
+
+	~MicroExquis(){
+		if (is_mts_esp_master){
+			MTS_DeregisterMaster();
+			INFO("MTS ESP Master unregistered");
+		}
 	}
 
 	void setParams(
 		int scaleStepsA, 
 		int scaleStepsB, 
 		float tuningOctave, 
-		int scaleMode, 
+		float scaleMode, 
 		float tuningPitchAngle
 	){
 		params[TUNING_OCTAVE_PARAM].setValue(tuningOctave);
@@ -182,6 +214,21 @@ struct MicroExquis : Module {
 
 	}
 
+	void setMTSESPTuning(){
+		if (is_mts_esp_master){
+			INFO("setting MTS ESP Tuning (mode=%d)", exquis.scaleMapper.scale.mode);
+			double freqs[128];
+			for(int i=0; i<128; i++){
+				// MIDI middle C = note number 60 = 261.6255653 Hz (= 440 * pow(2, -9/12))
+				ScaleVector v = exquis.scaleMapper.scale.scaleNoteSeqNrToCoord(i-60);
+				freqs[i] = 261.6255653f * tuning.vecToFreqRatio(v);
+				//INFO("tune %d -> %d;%d -> %f", i, v.x, v.y, freqs[i]);
+			}
+			MTS_SetNoteTunings(freqs);
+			INFO("MTS ESP Tuning set");
+		}
+	}
+
 	void process(const ProcessArgs& args) override {
 		//float fmParam = params[FM_PARAM].getValue();
 
@@ -191,6 +238,8 @@ struct MicroExquis : Module {
 			scaleStepsAParam = params[SCALE_STEPS_A_PARAM].getValue();
 			scaleStepsBParam = params[SCALE_STEPS_B_PARAM].getValue();
 			scaleModeParam = params[SCALE_MODE_PARAM].getValue();		
+
+			setMTSESPTuning();
 			initialized = true;
 		}
 		
@@ -213,6 +262,7 @@ struct MicroExquis : Module {
 				exquis_scaleStepsBParam != scaleStepsBParam || 
 				exquis_scaleModeParam != scaleModeParam
 			){
+
 				setParams(
 					exquis_scaleStepsAParam, 
 					exquis_scaleStepsBParam, 
@@ -226,6 +276,9 @@ struct MicroExquis : Module {
 				scaleStepsBParam = exquis_scaleStepsBParam;
 				scaleModeParam = exquis_scaleModeParam;
 
+				setMTSESPTuning();
+
+
 			}else{
 				//tuningOctaveParam = params[TUNING_OCTAVE_PARAM].getValue();
 				//tuningPitchAngleParam = params[TUNING_PITCHANGLE_PARAM].getValue();
@@ -237,6 +290,7 @@ struct MicroExquis : Module {
 			if (exquis.didManualRetune){
 				//tuningPreset = MicroExquis::TuningPresets::TUNING_EXQUIS;
 				setTuningInfoString();
+				setMTSESPTuning();
 				exquis.didManualRetune = false;
 			}
 		}

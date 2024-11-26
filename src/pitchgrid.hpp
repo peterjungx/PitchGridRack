@@ -106,8 +106,10 @@ struct RegularScale {
 		inverse_of_x = inverseModulo(scale_system.x, n);
 	}
 	ScaleVector scaleNoteSeqNrToCoord(int seqNr){
-		int x = (int)(scale_system.x * seqNr - 1.f * (n-(mode+1)) / n - .5f);
-		int y = (int)(scale_system.y * seqNr + 1.f * (n-(mode+1)) / n + .5f);
+
+		int x = (int)lround((float)(scale_system.x * seqNr - (n / 2 - mode)) / n + .0001f);
+		int y = (int)lround((float)(scale_system.y * seqNr + (n / 2 - mode)) / n - .0001f);
+		//INFO("%d;%d n=%d mode=%d i=%d (%f,%f) (%d,%d)", scale_system.x, scale_system.y, n, mode, seqNr, (float)(scale_system.x * seqNr - (n / 2 - mode)) / n + .0001f, (float)(scale_system.y * seqNr + (n / 2 - mode)) / n - .0001f, x, y);
 		return {x, y};
 	}
 	int coordToScaleNoteSeqNr(ScaleVector c){
