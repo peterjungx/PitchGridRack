@@ -1,6 +1,6 @@
 # PitchGrid Modules for VCV Rack
 
-The biodiversity in the area of tunings is rapidly shrinking: Everything is converging toward the 12-TET (mediated by the piano keyboard). PitchGrid is an answer to this cultural decay. We need tools that make it easy to play in arbitrary tunings.
+The diversity in the area of tunings is rapidly shrinking: Everything is converging toward the 12-TET (mediated by the piano keyboard). PitchGrid is an answer to this cultural decay. We need tools that make it easy to play in arbitrary tunings.
 
 The [PitchGrid](https://pitchgrid.io/scalemapper) generalizes the structure within Western tonality, including diatonic scales, harmonies, key changes, notation, to a much larger class of scales. The PitchGrid Modules for VCV Rack allow you to explore the resulting structures in an intuitive and powerful way.
 
@@ -26,12 +26,17 @@ To make my theoretical explorations audible and playable for the practicing musi
 
 The PitchGrid Microtonal Exquis (or MicroExquis for short) is a module in the VCV Rack PitchGrid plugin. Its purpose is to provide a means to explore different tunings, scales and hexagonal keyboard layouts via the [Exquis MPE controller by Intuitive Instruments](https://dualo.com/exquis/?utm_source=VCVplugin).
 
+- Acts as MTS-ESP Master
+- Scale and scale mode selection (all MOSes and more)
+- Consistent Tuning of Scales
+- Scale layout on Hex-Isomorphic Exquis Keyboard
+
 See the [Documentation for the MicroExquis](docs/PitchGrid%20MicroExquis.pdf) for details.
 
 
 ### Microtonal Hammond
 
-A Hammond Organ is a perfect model system for a tunable timbre. The overtones are, to a very good approximation, tuned to a 12-TET temperament, the same as the available pitches. In fact, the sound source of the overtones and the fundamentals are the same by construction. Arguably this is what makes the sound of the Hammond Organ special: Its timbre better fits the 12 tone equal temperament than an harmonic spectrum. (In a harmonic spectrum, the 3rd, 5th and 6th overtones are just ratios. On the Hammond, they are derived from the Perfect 5th and the Major 3rd from the above octaves of the 12-TET the organ is tuned to.) In this sense, the Hammond organ already employs reverse tuning to the 12-TET.
+A Hammond Orgcodan is a perfect model system for a tunable timbre. The overtones are, to a very good approximation, tuned to a 12-TET temperament, the same as the available pitches. In fact, the sound source of the overtones and the fundamentals are the same by construction. Arguably this is what makes the sound of the Hammond Organ special: Its timbre better fits the 12 tone equal temperament than an harmonic spectrum. (In a harmonic spectrum, the 3rd, 5th and 6th overtones are just ratios. On the Hammond, they are derived from the Perfect 5th and the Major 3rd from the above octaves of the 12-TET the organ is tuned to.) In this sense, the Hammond organ already employs reverse tuning to the 12-TET.
 
 The **Microtonal Hammond** allows to reverse tune its overtones (controlled by the "drawbar" knobs) to an arbitrary scale, via the _TDAT_ connector.  
 
