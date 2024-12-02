@@ -216,7 +216,7 @@ struct MicroExquis : Module {
 
 	void setMTSESPTuning(){
 		if (is_mts_esp_master){
-			INFO("setting MTS ESP Tuning (mode=%d)", exquis.scaleMapper.scale.mode);
+			//INFO("setting MTS ESP Tuning (mode=%d)", exquis.scaleMapper.scale.mode);
 			double freqs[128];
 			for(int i=0; i<128; i++){
 				// MIDI middle C = note number 60 = 261.6255653 Hz (= 440 * pow(2, -9/12))
@@ -225,7 +225,7 @@ struct MicroExquis : Module {
 				//INFO("tune %d -> %d;%d -> %f", i, v.x, v.y, freqs[i]);
 			}
 			MTS_SetNoteTunings(freqs);
-			INFO("MTS ESP Tuning set");
+			//INFO("MTS ESP Tuning set");
 		}
 	}
 
