@@ -258,7 +258,11 @@ struct Exquis {
 		midi_output.sendMessage(msg);
 	}
 	ExquisNote* getNoteByMidinote(uint8_t midinote){
-		return &notes[midinote - 36];
+		size_t index = midinote - 36;
+		if (index >= notes.size()) {
+			return nullptr;
+		}
+		return &notes[index];
 	}
 	ExquisNote* getNoteByVoltage(float voltage){
 		// expect V in [-5v, +5v], map 1V/octave and 0v = middle C (C4=midinote 60)

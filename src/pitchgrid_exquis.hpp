@@ -563,41 +563,42 @@ struct PitchGridExquis: Exquis {
 				
 				uint8_t noteId = msg.getNote();
 				
-				ExquisNote* note = getNoteByMidinote(noteId);
-				IntegerVector selectedInterval = note->scaleCoord;
-				if (selectedInterval == ZERO_VECTOR){
-					tuningConstantNoteSelected = false;
-					tuningConstantNote.stop();
-					tuningModeRetuneInterval = selectedInterval;
-					tuningRetuneNote.startWithNote(note);
-					tuningModeOn = true;
-				} else if (note->scaleSeqNr>=0 && selectedInterval.x >= 0 && selectedInterval.y >= 0 && selectedInterval.x <= scaleMapper.scale.scale_system.x && selectedInterval.y <= scaleMapper.scale.scale_system.y){
-					if (tuningConstantNoteSelected){
-						tuningConstantNoteSelected = false;
-						tuningConstantNote.stop();
-						tuningModeOn = false;
-						tuningRetuneNote.stop();
-					}
-					if (tuningModeOn){
-						if (tuningModeRetuneInterval != ZERO_VECTOR){
-							// check that selected intervals are not linearly dependent
-							if (tuningModeRetuneInterval.x * selectedInterval.y - tuningModeRetuneInterval.y * selectedInterval.x != 0){
-								tuningConstantNoteSelected = true;
-								tuningModeConstantInterval = selectedInterval;
-								tuningConstantNote.startWithNote(note);
-							}
-						}else{
-							tuningModeRetuneInterval = selectedInterval;
-							tuningRetuneNote.startWithNote(note);
-						}
-					}else{
+				if (ExquisNote* note = getNoteByMidinote(noteId)) {
+					IntegerVector selectedInterval = note->scaleCoord;
+					if (selectedInterval == ZERO_VECTOR){
 						tuningConstantNoteSelected = false;
 						tuningConstantNote.stop();
 						tuningModeRetuneInterval = selectedInterval;
 						tuningRetuneNote.startWithNote(note);
 						tuningModeOn = true;
-					}
-				} // otherwise ignore
+					} else if (note->scaleSeqNr>=0 && selectedInterval.x >= 0 && selectedInterval.y >= 0 && selectedInterval.x <= scaleMapper.scale.scale_system.x && selectedInterval.y <= scaleMapper.scale.scale_system.y){
+						if (tuningConstantNoteSelected){
+							tuningConstantNoteSelected = false;
+							tuningConstantNote.stop();
+							tuningModeOn = false;
+							tuningRetuneNote.stop();
+						}
+						if (tuningModeOn){
+							if (tuningModeRetuneInterval != ZERO_VECTOR){
+								// check that selected intervals are not linearly dependent
+								if (tuningModeRetuneInterval.x * selectedInterval.y - tuningModeRetuneInterval.y * selectedInterval.x != 0){
+									tuningConstantNoteSelected = true;
+									tuningModeConstantInterval = selectedInterval;
+									tuningConstantNote.startWithNote(note);
+								}
+							}else{
+								tuningModeRetuneInterval = selectedInterval;
+								tuningRetuneNote.startWithNote(note);
+							}
+						}else{
+							tuningConstantNoteSelected = false;
+							tuningConstantNote.stop();
+							tuningModeRetuneInterval = selectedInterval;
+							tuningRetuneNote.startWithNote(note);
+							tuningModeOn = true;
+						}
+					} // otherwise ignore
+				}
 			}
 		} else if (scaleSelectModeOn){
 			// react to button presses in scale select mode
@@ -606,11 +607,12 @@ struct PitchGridExquis: Exquis {
 				
 				uint8_t noteId = msg.getNote();
 				
-				ExquisNote* note = getNoteByMidinote(noteId);
-				ScaleVector scaleSystem = scaleSystemForNote(note);
-				if (scaleSystem.x > 0 && scaleSystem.y > 0 && scaleMapper.scale.isCoprimeScaleVector(scaleSystem)){
-					scaleMapper.scale.setScaleSystem(scaleSystem);
-					selectedScaleNote.startWithNote(note);
+				if (ExquisNote* note = getNoteByMidinote(noteId)) {
+					ScaleVector scaleSystem = scaleSystemForNote(note);
+					if (scaleSystem.x > 0 && scaleSystem.y > 0 && scaleMapper.scale.isCoprimeScaleVector(scaleSystem)){
+						scaleMapper.scale.setScaleSystem(scaleSystem);
+						selectedScaleNote.startWithNote(note);
+					}
 				}
 				showScaleSystemSelectLayer();
 			}
@@ -621,30 +623,33 @@ struct PitchGridExquis: Exquis {
 				
 				uint8_t noteId = msg.getNote();
 				
-				ExquisNote* note = getNoteByMidinote(noteId);
-				scaleMapper.moveBaseTo(note->coord);
+				if (ExquisNote* note = getNoteByMidinote(noteId)) {
+					scaleMapper.moveBaseTo(note->coord);
+				}
 				showSingleOctaveLayer();
 			}
 		}
 		if (msg.getStatus()==0x9){
 			// note on
 			uint8_t noteId = msg.getNote();
-			ExquisNote* note = getNoteByMidinote(noteId);
-			note->playing = true;
+			if (ExquisNote* note = getNoteByMidinote(noteId)) {
+				note->playing = true;
 
-			if (tuning){
-				lastNotePlayedNameLabel = scaleMapper.scale.canonicalNameForCoord(note->scaleCoord, tuning) + " (" + std::to_string(note->scaleCoord.y) + "," +  std::to_string(note->scaleCoord.x) + ")";
-				std::stringstream ss1;
-				float note_fr = tuning->vecToFreqRatioNoOffset(note->scaleCoord);
-				ss1 << std::fixed << std::setprecision(1) << 1200*log2(note_fr) << "ct"
-					<< " (" <<  contFracDisplay(note_fr) << ")";
-				lastNotePlayedLabel = ss1.str();
+				if (tuning){
+					lastNotePlayedNameLabel = scaleMapper.scale.canonicalNameForCoord(note->scaleCoord, tuning) + " (" + std::to_string(note->scaleCoord.y) + "," +  std::to_string(note->scaleCoord.x) + ")";
+					std::stringstream ss1;
+					float note_fr = tuning->vecToFreqRatioNoOffset(note->scaleCoord);
+					ss1 << std::fixed << std::setprecision(1) << 1200*log2(note_fr) << "ct"
+						<< " (" <<  contFracDisplay(note_fr) << ")";
+					lastNotePlayedLabel = ss1.str();
+				}
 			}
 		}else if (msg.getStatus()==0x8){
 			// note off
 			uint8_t noteId = msg.getNote();
-			ExquisNote* note = getNoteByMidinote(noteId);
-			note->playing = false;
+			if (ExquisNote* note = getNoteByMidinote(noteId)) {
+				note->playing = false;
+			}
 		}
 	}
 
