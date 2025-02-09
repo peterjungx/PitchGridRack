@@ -407,8 +407,52 @@ struct PitchGridExquis: Exquis {
 		return ss.str();
 	}
 
+	void processMidiMessageFirmwareV2(const midi::Message& msg) {
+		if (msg.bytes.size() != 3) {
+			return;
+		}
+		uint8_t messageType = msg.bytes[0];
+		uint8_t controllerId = msg.bytes[1];
+		uint8_t value = msg.bytes[2];
+		if (messageType == 0xB0) {
+			// Knob press/release; knobs are in order, 0x15, 0x16, 0x17, 0x18. Last byte is 0x7F for press; 0x00 for release.
+			switch (controllerId) {
+				// Note: Using knob here because v2 doesn't appear to send any sysex signal
+				// for the "tuning" button (second bottom-row button).
+				case 0x15: {
+					if (value == 0x7F) {
+						enterTuningIntervalSelectionMode();
+					} else {
+						exitTuningIntervalSelectionMode();
+					}
+					break;
+				}
+				case 0x16: {
+					if (value == 0x7F) {
+						enterArrangeMode();
+					} else {
+						exitArrangeMode();
+					}
+					break;
+				}
+				case 0x17: {
+					if (value == 0x7F) {
+						enterScaleSelectMode();
+					} else {
+						exitScaleSelectMode();
+					}
+					break;
+				}
+			}
+		}
+		// TODO: Detect relative knob turn signals for tuning. With v2 firmware, it only seems to
+		//  be sending absolute values.
+	}
 
 	void processMidiMessage(midi::Message msg) override {
+		// Firmware v2 doesn't send the below sysex messages; make some of the same functions available by alternative means.
+		processMidiMessageFirmwareV2(msg);
+
 		// control sysex messages 
 		if (msg.bytes.size() == 8 && msg.bytes[0] == 0xf0 && msg.bytes[1] == 0x00 && msg.bytes[2] == 0x21 && msg.bytes[3] == 0x7e && msg.bytes[7] == 0xf7) {
 			uint8_t messageType = msg.bytes[4];
@@ -563,41 +607,42 @@ struct PitchGridExquis: Exquis {
 				
 				uint8_t noteId = msg.getNote();
 				
-				ExquisNote* note = getNoteByMidinote(noteId);
-				IntegerVector selectedInterval = note->scaleCoord;
-				if (selectedInterval == ZERO_VECTOR){
-					tuningConstantNoteSelected = false;
-					tuningConstantNote.stop();
-					tuningModeRetuneInterval = selectedInterval;
-					tuningRetuneNote.startWithNote(note);
-					tuningModeOn = true;
-				} else if (note->scaleSeqNr>=0 && selectedInterval.x >= 0 && selectedInterval.y >= 0 && selectedInterval.x <= scaleMapper.scale.scale_system.x && selectedInterval.y <= scaleMapper.scale.scale_system.y){
-					if (tuningConstantNoteSelected){
-						tuningConstantNoteSelected = false;
-						tuningConstantNote.stop();
-						tuningModeOn = false;
-						tuningRetuneNote.stop();
-					}
-					if (tuningModeOn){
-						if (tuningModeRetuneInterval != ZERO_VECTOR){
-							// check that selected intervals are not linearly dependent
-							if (tuningModeRetuneInterval.x * selectedInterval.y - tuningModeRetuneInterval.y * selectedInterval.x != 0){
-								tuningConstantNoteSelected = true;
-								tuningModeConstantInterval = selectedInterval;
-								tuningConstantNote.startWithNote(note);
-							}
-						}else{
-							tuningModeRetuneInterval = selectedInterval;
-							tuningRetuneNote.startWithNote(note);
-						}
-					}else{
+				if (ExquisNote* note = getNoteByMidinote(noteId)) {
+					IntegerVector selectedInterval = note->scaleCoord;
+					if (selectedInterval == ZERO_VECTOR){
 						tuningConstantNoteSelected = false;
 						tuningConstantNote.stop();
 						tuningModeRetuneInterval = selectedInterval;
 						tuningRetuneNote.startWithNote(note);
 						tuningModeOn = true;
-					}
-				} // otherwise ignore
+					} else if (note->scaleSeqNr>=0 && selectedInterval.x >= 0 && selectedInterval.y >= 0 && selectedInterval.x <= scaleMapper.scale.scale_system.x && selectedInterval.y <= scaleMapper.scale.scale_system.y){
+						if (tuningConstantNoteSelected){
+							tuningConstantNoteSelected = false;
+							tuningConstantNote.stop();
+							tuningModeOn = false;
+							tuningRetuneNote.stop();
+						}
+						if (tuningModeOn){
+							if (tuningModeRetuneInterval != ZERO_VECTOR){
+								// check that selected intervals are not linearly dependent
+								if (tuningModeRetuneInterval.x * selectedInterval.y - tuningModeRetuneInterval.y * selectedInterval.x != 0){
+									tuningConstantNoteSelected = true;
+									tuningModeConstantInterval = selectedInterval;
+									tuningConstantNote.startWithNote(note);
+								}
+							}else{
+								tuningModeRetuneInterval = selectedInterval;
+								tuningRetuneNote.startWithNote(note);
+							}
+						}else{
+							tuningConstantNoteSelected = false;
+							tuningConstantNote.stop();
+							tuningModeRetuneInterval = selectedInterval;
+							tuningRetuneNote.startWithNote(note);
+							tuningModeOn = true;
+						}
+					} // otherwise ignore
+				}
 			}
 		} else if (scaleSelectModeOn){
 			// react to button presses in scale select mode
@@ -606,11 +651,12 @@ struct PitchGridExquis: Exquis {
 				
 				uint8_t noteId = msg.getNote();
 				
-				ExquisNote* note = getNoteByMidinote(noteId);
-				ScaleVector scaleSystem = scaleSystemForNote(note);
-				if (scaleSystem.x > 0 && scaleSystem.y > 0 && scaleMapper.scale.isCoprimeScaleVector(scaleSystem)){
-					scaleMapper.scale.setScaleSystem(scaleSystem);
-					selectedScaleNote.startWithNote(note);
+				if (ExquisNote* note = getNoteByMidinote(noteId)) {
+					ScaleVector scaleSystem = scaleSystemForNote(note);
+					if (scaleSystem.x > 0 && scaleSystem.y > 0 && scaleMapper.scale.isCoprimeScaleVector(scaleSystem)){
+						scaleMapper.scale.setScaleSystem(scaleSystem);
+						selectedScaleNote.startWithNote(note);
+					}
 				}
 				showScaleSystemSelectLayer();
 			}
@@ -621,30 +667,33 @@ struct PitchGridExquis: Exquis {
 				
 				uint8_t noteId = msg.getNote();
 				
-				ExquisNote* note = getNoteByMidinote(noteId);
-				scaleMapper.moveBaseTo(note->coord);
+				if (ExquisNote* note = getNoteByMidinote(noteId)) {
+					scaleMapper.moveBaseTo(note->coord);
+				}
 				showSingleOctaveLayer();
 			}
 		}
 		if (msg.getStatus()==0x9){
 			// note on
 			uint8_t noteId = msg.getNote();
-			ExquisNote* note = getNoteByMidinote(noteId);
-			note->playing = true;
+			if (ExquisNote* note = getNoteByMidinote(noteId)) {
+				note->playing = true;
 
-			if (tuning){
-				lastNotePlayedNameLabel = scaleMapper.scale.canonicalNameForCoord(note->scaleCoord, tuning) + " (" + std::to_string(note->scaleCoord.y) + "," +  std::to_string(note->scaleCoord.x) + ")";
-				std::stringstream ss1;
-				float note_fr = tuning->vecToFreqRatioNoOffset(note->scaleCoord);
-				ss1 << std::fixed << std::setprecision(1) << 1200*log2(note_fr) << "ct"
-					<< " (" <<  contFracDisplay(note_fr) << ")";
-				lastNotePlayedLabel = ss1.str();
+				if (tuning){
+					lastNotePlayedNameLabel = scaleMapper.scale.canonicalNameForCoord(note->scaleCoord, tuning) + " (" + std::to_string(note->scaleCoord.y) + "," +  std::to_string(note->scaleCoord.x) + ")";
+					std::stringstream ss1;
+					float note_fr = tuning->vecToFreqRatioNoOffset(note->scaleCoord);
+					ss1 << std::fixed << std::setprecision(1) << 1200*log2(note_fr) << "ct"
+						<< " (" <<  contFracDisplay(note_fr) << ")";
+					lastNotePlayedLabel = ss1.str();
+				}
 			}
 		}else if (msg.getStatus()==0x8){
 			// note off
 			uint8_t noteId = msg.getNote();
-			ExquisNote* note = getNoteByMidinote(noteId);
-			note->playing = false;
+			if (ExquisNote* note = getNoteByMidinote(noteId)) {
+				note->playing = false;
+			}
 		}
 	}
 

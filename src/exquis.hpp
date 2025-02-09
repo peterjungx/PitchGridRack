@@ -91,15 +91,23 @@ struct ExquisNote {
 	}
 	void sendSetMidinoteMessage(midi::Output* midi_output){
 		midi::Message msg;
-		// F0 00 21 7E 04 noteId midinote F7
+		// TODO: Select firmware compatibility mode; sending both for now since v2 support is incomplete.
+		// Firmware v1: F0 00 21 7E 04 noteId midinote F7
 		msg.bytes = {0xf0, 0x00, 0x21, 0x7e, 0x04, noteId, midinote, 0xf7};
+		midi_output->sendMessage(msg);
+		// Firmware v2: F0 00 21 7E 15 noteId midinote F7
+		msg.bytes = {0xf0, 0x00, 0x21, 0x7e, 0x15, noteId, midinote, 0xf7};
 		midi_output->sendMessage(msg);
 	}
 	void sendSetColorMessage(midi::Output* midi_output, Color color){
 		midi::Message msg;
-		// F0 00 21 7E 03 noteId r g b F7
 		shownColor = color;
+		// TODO: Select firmware compatibility mode; sending both for now since v2 support is incomplete.
+		// Firmware v1: F0 00 21 7E 03 noteId r g b F7
 		msg.bytes = {0xf0, 0x00, 0x21, 0x7e, 0x03, noteId, color.r, color.g, color.b, 0xf7};
+		midi_output->sendMessage(msg);
+		// Firmware v2: F0 00 21 7E 14 noteId r g b F7
+		msg.bytes = {0xf0, 0x00, 0x21, 0x7e, 0x14, noteId, color.r, color.g, color.b, 0xf7};
 		midi_output->sendMessage(msg);
 	}
 };
@@ -258,7 +266,11 @@ struct Exquis {
 		midi_output.sendMessage(msg);
 	}
 	ExquisNote* getNoteByMidinote(uint8_t midinote){
-		return &notes[midinote - 36];
+		size_t index = midinote - 36;
+		if (index >= notes.size()) {
+			return nullptr;
+		}
+		return &notes[index];
 	}
 	ExquisNote* getNoteByVoltage(float voltage){
 		// expect V in [-5v, +5v], map 1V/octave and 0v = middle C (C4=midinote 60)

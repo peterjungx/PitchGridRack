@@ -364,7 +364,9 @@ struct MicroExquis : Module {
 
 			for (int i = 0; i < 4; i++){
 				ExquisNote* note = exquis.getNoteByVoltage(pitch[i]);
-				voltage[i] = tuning.vecToVoltage(note->scaleCoord);
+				if (note) {
+					voltage[i] = tuning.vecToVoltage(note->scaleCoord);
+				}
 			}
 
 			// Set output
