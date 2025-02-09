@@ -91,15 +91,23 @@ struct ExquisNote {
 	}
 	void sendSetMidinoteMessage(midi::Output* midi_output){
 		midi::Message msg;
-		// F0 00 21 7E 04 noteId midinote F7
+		// TODO: Select firmware compatibility mode; sending both for now since v2 support is incomplete.
+		// Firmware v1: F0 00 21 7E 04 noteId midinote F7
 		msg.bytes = {0xf0, 0x00, 0x21, 0x7e, 0x04, noteId, midinote, 0xf7};
+		midi_output->sendMessage(msg);
+		// Firmware v2: F0 00 21 7E 15 noteId midinote F7
+		msg.bytes = {0xf0, 0x00, 0x21, 0x7e, 0x15, noteId, midinote, 0xf7};
 		midi_output->sendMessage(msg);
 	}
 	void sendSetColorMessage(midi::Output* midi_output, Color color){
 		midi::Message msg;
-		// F0 00 21 7E 03 noteId r g b F7
 		shownColor = color;
+		// TODO: Select firmware compatibility mode; sending both for now since v2 support is incomplete.
+		// Firmware v1: F0 00 21 7E 03 noteId r g b F7
 		msg.bytes = {0xf0, 0x00, 0x21, 0x7e, 0x03, noteId, color.r, color.g, color.b, 0xf7};
+		midi_output->sendMessage(msg);
+		// Firmware v2: F0 00 21 7E 14 noteId r g b F7
+		msg.bytes = {0xf0, 0x00, 0x21, 0x7e, 0x14, noteId, color.r, color.g, color.b, 0xf7};
 		midi_output->sendMessage(msg);
 	}
 };
