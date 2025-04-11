@@ -38,6 +38,7 @@ struct MicroExquis : Module {
 		SCALE_MODE_PARAM, // 1=major
 		
 		KEY_LABELS_SWITCH_PARAM,
+		KEYBOARD_MAPPING_SWITCH_PARAM,
 		//KEY_LABELS_PARAM,
 
 		NUM_PARAMS
@@ -56,14 +57,23 @@ struct MicroExquis : Module {
 		LABELS_NONE_LIGHT,
 		LABELS_SCALE_LIGHT,
 		LABELS_COORD_LIGHT,
+		KEYBOARD_MAPPING_EXQUIS_LIGHT,
+		KEYBOARD_MAPPING_PIANOALL_LIGHT,
+		KEYBOARD_MAPPING_PIANOWHITE_LIGHT,
 		NUM_LIGHTS
 	};
 
 	enum KeyLabels {
 		KEY_LABELS_NONE,
 		KEY_LABELS_SCALE,
-		KEY_LABELS_COORD
+		KEY_LABELS_COORD,
 	} keyLabels = KEY_LABELS_SCALE;
+
+	enum MtsTuningMode {
+		MTS_TUNING_MODE_EXQUIS,
+		MTS_TUNING_MODE_PIANO_SCALESEQ_ALL,
+		MTS_TUNING_MODE_PIANO_SCALESEQ_WHITE,
+	} mtsTuningMode = MTS_TUNING_MODE_PIANO_SCALESEQ_ALL;
 
 	ConsistentTuning tuning = ConsistentTuning({2, 5}, 2.f, {1, 3}, pow(2.f, 7.f/12.f)); // 12TET
 
@@ -102,6 +112,7 @@ struct MicroExquis : Module {
 
 	bool initialized = false;
 	bool last_key_param_state_low = true;
+	bool last_keyboardmap_param_state_low = true;
 
 	bool is_mts_esp_master = false;
 
@@ -116,7 +127,7 @@ struct MicroExquis : Module {
 
 	TuningDataSender tuningDataSender = TuningDataSender();
 
-
+    
 
 	MicroExquis() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -129,6 +140,8 @@ struct MicroExquis : Module {
 		configParam(SCALE_STEPS_B_PARAM, 1.f, 7.f, 5.f, "Scale Steps B", "V");
 		configParam(SCALE_MODE_PARAM, 0.f, 1.f, 1.f, "Scale Mode", "", 0.f, 7.f);
 		configSwitch(KEY_LABELS_SWITCH_PARAM, 0.0f, 1.0f, 0.0f, "Change key labels");
+		configSwitch(KEYBOARD_MAPPING_SWITCH_PARAM, 0.0f, 1.0f, 0.0f, "Keyboard Mapping");
+
 		//configSwitch(KEY_LABELS_PARAM, 1.0f, 3.0f, 1.0f, "Key Labels", {"None", "Scale", "Coord"});
 
 		configInput(VOCT_INPUT, "1V/octave pitch");
@@ -216,14 +229,46 @@ struct MicroExquis : Module {
 
 	void setMTSESPTuning(){
 		if (is_mts_esp_master){
+
+
 			//INFO("setting MTS ESP Tuning (mode=%d)", exquis.scaleMapper.scale.mode);
 			double freqs[128];
-			for(int i=0; i<128; i++){
-				// MIDI middle C = note number 60 = 261.6255653 Hz (= 440 * pow(2, -9/12))
-				ScaleVector v = exquis.scaleMapper.scale.scaleNoteSeqNrToCoord(i-60);
-				freqs[i] = 261.6255653f * tuning.vecToFreqRatio(v);
-				//INFO("tune %d -> %d;%d -> %f", i, v.x, v.y, freqs[i]);
+
+
+			if (mtsTuningMode==MTS_TUNING_MODE_EXQUIS){
+				// MIDI note number +1 = scale note sequence number +1
+				for(int i=0; i<36; i++) freqs[i] = 261.6255653f;
+				for(int i=97; i<128; i++) freqs[i] = 261.6255653f;
+
+				for(int i=36; i<97; i++){
+					ScaleVector v = exquis.notes[i-36].scaleCoord;
+					freqs[i] = 261.6255653f * tuning.vecToFreqRatio(v);
+					//INFO("tune %d -> %d;%d -> %f", i, v.x, v.y, freqs[i]);
+				}
+			} else if (mtsTuningMode==MTS_TUNING_MODE_PIANO_SCALESEQ_ALL){
+				// MIDI note number +1 = scale note sequence number +1
+				for(int i=0; i<128; i++){
+					// MIDI middle C = note number 60 = 261.6255653 Hz (= 440 * pow(2, -9/12)) 
+					ScaleVector v = exquis.scaleMapper.scale.scaleNoteSeqNrToCoord(i-60);
+					freqs[i] = 261.6255653f * tuning.vecToFreqRatio(v);
+					INFO("tune %d -> %d;%d -> %f", i, v.x, v.y, freqs[i]);
+				}
+			} else { //if (mtsTuningMode==MTS_TUNING_MODE_PIANO_SCALESEQ_WHITE){
+				// MIDI next white key = scale note sequence number +1
+				int whiteKeySeqNr = 0;
+				for(int i=0; i<128; i++){
+					if (i%12 == 0 || i%12 == 2 || i%12 == 4 || i%12 == 5 || i%12 == 7 || i%12 == 9 || i%12 == 11){
+						ScaleVector v = exquis.scaleMapper.scale.scaleNoteSeqNrToCoord(whiteKeySeqNr-35);
+						freqs[i] = 261.6255653f * tuning.vecToFreqRatio(v);
+						whiteKeySeqNr++;
+					}else{
+						freqs[i] = 0.f;
+					}
+					//INFO("tune %d -> %d;%d -> %f", i, v.x, v.y, freqs[i]);
+				}
 			}
+
+			// 
 			MTS_SetNoteTunings(freqs);
 			//INFO("MTS ESP Tuning set");
 		}
@@ -287,11 +332,11 @@ struct MicroExquis : Module {
 				//scaleModeParam = params[SCALE_MODE_PARAM].getValue();				
 			}
 
-			if (exquis.didManualRetune){
+			if (exquis.needsRetune){
 				//tuningPreset = MicroExquis::TuningPresets::TUNING_EXQUIS;
 				setTuningInfoString();
 				setMTSESPTuning();
-				exquis.didManualRetune = false;
+				exquis.needsRetune = false;
 			}
 		}
 
@@ -393,6 +438,8 @@ struct MicroExquis : Module {
 
 			tuningDataSender.setTuningData(&tuning, &exquis.scaleMapper.scale);
 
+
+			// Handle Labels selection
 			if (params[KEY_LABELS_SWITCH_PARAM].getValue() < 0.5 && !last_key_param_state_low) {
 				keyLabels = (KeyLabels)((keyLabels + 1) % 3);
 				last_key_param_state_low = true;
@@ -405,6 +452,22 @@ struct MicroExquis : Module {
 			lights[LABELS_NONE_LIGHT].value = keyLabels == KeyLabels::KEY_LABELS_NONE;
 			lights[LABELS_SCALE_LIGHT].value = keyLabels == KeyLabels::KEY_LABELS_SCALE;
 			lights[LABELS_COORD_LIGHT].value = keyLabels == KeyLabels::KEY_LABELS_COORD;
+
+
+			// Handle Note mapping selection
+			if (params[KEYBOARD_MAPPING_SWITCH_PARAM].getValue() < 0.5 && !last_keyboardmap_param_state_low) {
+				mtsTuningMode = (MtsTuningMode)((mtsTuningMode + 1) % 3);
+				setMTSESPTuning();
+				last_keyboardmap_param_state_low = true;
+			}else if (params[KEYBOARD_MAPPING_SWITCH_PARAM].getValue() > 0.5){
+				last_keyboardmap_param_state_low = false;
+			}
+
+			lights[KEYBOARD_MAPPING_EXQUIS_LIGHT].value = mtsTuningMode == MtsTuningMode::MTS_TUNING_MODE_EXQUIS;
+			lights[KEYBOARD_MAPPING_PIANOALL_LIGHT].value = mtsTuningMode == MtsTuningMode::MTS_TUNING_MODE_PIANO_SCALESEQ_ALL;
+			lights[KEYBOARD_MAPPING_PIANOWHITE_LIGHT].value = mtsTuningMode == MtsTuningMode::MTS_TUNING_MODE_PIANO_SCALESEQ_WHITE;
+
+
 		}
 		tuningDataSender.processWithOutput(&outputs[TUNING_DATA_OUTPUT]);
 
@@ -756,10 +819,16 @@ struct MicroExquisWidget : ModuleWidget {
 		addOutput(createOutputCentered<ThemedPJ301MPort>(mm2px(Vec(83.32, 113.115)), module, MicroExquis::MVOCT_OUTPUT));
 		addOutput(createOutputCentered<ThemedPJ301MPort>(mm2px(Vec(94.77, 113.115)), module, MicroExquis::TUNING_DATA_OUTPUT));
 
-		addChild(createLightCentered<SmallLight<GreenLight>>(mm2px(Vec(31., 106.915)), module, MicroExquis::LABELS_NONE_LIGHT));
-		addChild(createLightCentered<SmallLight<GreenLight>>(mm2px(Vec(31., 111.615)), module, MicroExquis::LABELS_SCALE_LIGHT));
-		addChild(createLightCentered<SmallLight<GreenLight>>(mm2px(Vec(31., 116.315)), module, MicroExquis::LABELS_COORD_LIGHT));
-		addParam(createParamCentered<VCVBezel>(mm2px(Vec(24., 113.115)), module, MicroExquis::KEY_LABELS_SWITCH_PARAM));
+		addChild(createLightCentered<SmallLight<GreenLight>>(mm2px(Vec(29., 106.915)), module, MicroExquis::LABELS_NONE_LIGHT));
+		addChild(createLightCentered<SmallLight<GreenLight>>(mm2px(Vec(29., 111.615)), module, MicroExquis::LABELS_SCALE_LIGHT));
+		addChild(createLightCentered<SmallLight<GreenLight>>(mm2px(Vec(29., 116.315)), module, MicroExquis::LABELS_COORD_LIGHT));
+		addParam(createParamCentered<VCVBezel>(mm2px(Vec(22., 111.7)), module, MicroExquis::KEY_LABELS_SWITCH_PARAM));
+
+		addChild(createLightCentered<SmallLight<GreenLight>>(mm2px(Vec(61., 106.915)), module, MicroExquis::KEYBOARD_MAPPING_EXQUIS_LIGHT));
+		addChild(createLightCentered<SmallLight<GreenLight>>(mm2px(Vec(61., 111.615)), module, MicroExquis::KEYBOARD_MAPPING_PIANOALL_LIGHT));
+		addChild(createLightCentered<SmallLight<GreenLight>>(mm2px(Vec(61., 116.315)), module, MicroExquis::KEYBOARD_MAPPING_PIANOWHITE_LIGHT));
+		addParam(createParamCentered<VCVBezel>(mm2px(Vec(54., 111.7)), module, MicroExquis::KEYBOARD_MAPPING_SWITCH_PARAM));
+
 
 		ExquisHexDisplay* hexDisplay = createWidget<ExquisHexDisplay>(mm2px(Vec(0.338, 12.5)));
 		//hexDisplay->box.size = mm2px(Vec(28, 46));

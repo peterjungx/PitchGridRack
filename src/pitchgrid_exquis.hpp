@@ -118,7 +118,7 @@ struct PitchGridExquis: Exquis {
 	ExquisScaleMapper scaleMapper;
 	ConsistentTuning* tuning = NULL;
 
-	bool didManualRetune = false;
+	bool needsRetune = false;
 
 	std::string lastNotePlayedLabel = "";
 	std::string lastNotePlayedNameLabel = "";
@@ -355,12 +355,13 @@ struct PitchGridExquis: Exquis {
 			tuning->setParams(tuningModeRetuneInterval, retune_f*pow(2.f, amount/1200.f), tuningModeConstantInterval, constant_f);
 		}
 
-		didManualRetune = true;
+		needsRetune = true;
 		updateKeyDisplay();
 
 	}
 
 	void justifyTuning(){
+		// TODO: check crash
 		if (tuningModeOn && tuningModeRetuneInterval != ZERO_VECTOR){
 			// tune selected note to a close just interval while keeping the other note constant
 			float f = tuning->vecToFreqRatioNoOffset( tuningModeRetuneInterval );
@@ -373,7 +374,7 @@ struct PitchGridExquis: Exquis {
 			}else{
 				tuning->setParams(tuningModeRetuneInterval, approx.toFloat(), tuningModeConstantInterval, tuning->vecToFreqRatioNoOffset(tuningModeConstantInterval));
 			}
-			didManualRetune = true;
+			needsRetune = true;
 
 		}
 	}
@@ -389,7 +390,7 @@ struct PitchGridExquis: Exquis {
 			}else{
 				tuning->setParams(tuningModeRetuneInterval, f, tuningModeConstantInterval, tuning->vecToFreqRatioNoOffset(tuningModeConstantInterval));
 			}
-			didManualRetune = true;
+			needsRetune = true;
 
 		}
 	}
@@ -444,6 +445,7 @@ struct PitchGridExquis: Exquis {
 								float octave_freq_ratio = tuning->vecToFreqRatioNoOffset(scaleMapper.scale.scale_system);
 								float new_offset = tuning->Offset() - log2(octave_freq_ratio);
 								tuning->setOffset(new_offset);
+								needsRetune = true;
 							}
 							break;
 						case 7: // octave up
@@ -452,6 +454,7 @@ struct PitchGridExquis: Exquis {
 								float octave_freq_ratio = tuning->vecToFreqRatioNoOffset(scaleMapper.scale.scale_system);
 								float new_offset = tuning->Offset() + log2(octave_freq_ratio);
 								tuning->setOffset(new_offset);
+								needsRetune = true;
 							}
 							break;
 						case 10: // controller 1 press
@@ -459,6 +462,7 @@ struct PitchGridExquis: Exquis {
 								if (value == 1){
 									scaleMapper.flipHorizontally();
 									showSingleOctaveLayer();
+									needsRetune = true;
 								}
 							} else if (tuningModeOn){
 								if (value == 1){
@@ -471,6 +475,7 @@ struct PitchGridExquis: Exquis {
 								if (value == 1){
 									scaleMapper.flipVertically();
 									showSingleOctaveLayer();
+									needsRetune = true;
 								}
 							} else if (tuningModeOn){
 								if (value == 1){
@@ -499,6 +504,7 @@ struct PitchGridExquis: Exquis {
 								//scaleMapper.shiftY(-1);
 								scaleMapper.rotatePlus60();
 								showSingleOctaveLayer();
+								needsRetune = true;
 							}else if (tuningModeOn){
 								retuneIntervalByAmount(-10.0*value);
 							}
@@ -508,6 +514,7 @@ struct PitchGridExquis: Exquis {
 								//scaleMapper.shiftX(1);
 								scaleMapper.skewY(-1);
 								showSingleOctaveLayer();
+								needsRetune = true;
 							}else if (tuningModeOn){
 								retuneIntervalByAmount(-0.1*value);
 							}
@@ -518,6 +525,7 @@ struct PitchGridExquis: Exquis {
 							if (!scaleSelectModeOn){
 								scaleMapper.scale.mode = scaleMapper.scale.mode >0 ? scaleMapper.scale.mode - 1 : 0;
 								updateKeyDisplay();
+								needsRetune = true;
 							}
 							break;
 					}
@@ -529,6 +537,7 @@ struct PitchGridExquis: Exquis {
 								//scaleMapper.shiftY(1);
 								scaleMapper.rotateMinus60();
 								showSingleOctaveLayer();
+								needsRetune = true;
 							}else if (tuningModeOn){
 								retuneIntervalByAmount(10.0*value);
 							}
@@ -538,6 +547,7 @@ struct PitchGridExquis: Exquis {
 								//scaleMapper.shiftX(-1);
 								scaleMapper.skewY(1);
 								showSingleOctaveLayer();
+								needsRetune = true;
 							}else if (tuningModeOn){
 								retuneIntervalByAmount(0.1*value);
 							}
@@ -548,6 +558,7 @@ struct PitchGridExquis: Exquis {
 							if (!scaleSelectModeOn){
 								scaleMapper.scale.mode = scaleMapper.scale.mode < scaleMapper.scale.n-1 ? scaleMapper.scale.mode + 1 : scaleMapper.scale.n-1;
 								updateKeyDisplay();
+								needsRetune = true;
 							}
 							break;
 					}
@@ -611,6 +622,7 @@ struct PitchGridExquis: Exquis {
 				if (scaleSystem.x > 0 && scaleSystem.y > 0 && scaleMapper.scale.isCoprimeScaleVector(scaleSystem)){
 					scaleMapper.scale.setScaleSystem(scaleSystem);
 					selectedScaleNote.startWithNote(note);
+					needsRetune = true;
 				}
 				showScaleSystemSelectLayer();
 			}
@@ -624,6 +636,7 @@ struct PitchGridExquis: Exquis {
 				ExquisNote* note = getNoteByMidinote(noteId);
 				scaleMapper.moveBaseTo(note->coord);
 				showSingleOctaveLayer();
+				needsRetune = true;
 			}
 		}
 		if (msg.getStatus()==0x9){
