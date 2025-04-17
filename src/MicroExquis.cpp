@@ -37,9 +37,11 @@ struct MicroExquis : Module {
 		SCALE_STEPS_B_PARAM, 
 		SCALE_MODE_PARAM, // 1=major
 		
-		KEY_LABELS_SWITCH_PARAM,
+		KEY_LABELS_SWITCH_PARAM, // on/off switch
 		KEYBOARD_MAPPING_SWITCH_PARAM,
-		//KEY_LABELS_PARAM,
+		
+		KEY_LABELS_PARAM, // for storage
+		KEYBOARD_MAPPING_PARAM, // for storage
 
 		NUM_PARAMS
 	};
@@ -68,12 +70,12 @@ struct MicroExquis : Module {
 		KEY_LABELS_SCALE,
 		KEY_LABELS_COORD,
 	} keyLabels = KEY_LABELS_SCALE;
-
+	
 	enum MtsTuningMode {
 		MTS_TUNING_MODE_EXQUIS,
 		MTS_TUNING_MODE_PIANO_SCALESEQ_ALL,
 		MTS_TUNING_MODE_PIANO_SCALESEQ_WHITE,
-	} mtsTuningMode = MTS_TUNING_MODE_PIANO_SCALESEQ_ALL;
+	} mtsTuningMode = MTS_TUNING_MODE_EXQUIS;
 
 	ConsistentTuning tuning = ConsistentTuning({2, 5}, 2.f, {1, 3}, pow(2.f, 7.f/12.f)); // 12TET
 
@@ -142,6 +144,9 @@ struct MicroExquis : Module {
 		configSwitch(KEY_LABELS_SWITCH_PARAM, 0.0f, 1.0f, 0.0f, "Change key labels");
 		configSwitch(KEYBOARD_MAPPING_SWITCH_PARAM, 0.0f, 1.0f, 0.0f, "Keyboard Mapping");
 
+		configParam(KEY_LABELS_PARAM, 0.0f, 2.0f, 1.0f, "Key Labels", "", 0.0f, 2.0f);
+		configParam(KEYBOARD_MAPPING_PARAM, 0.0f, 2.0f, 1.0f, "Keyboard Mapping", "", 0.0f, 2.0f);
+
 		//configSwitch(KEY_LABELS_PARAM, 1.0f, 3.0f, 1.0f, "Key Labels", {"None", "Scale", "Coord"});
 
 		configInput(VOCT_INPUT, "1V/octave pitch");
@@ -187,10 +192,15 @@ struct MicroExquis : Module {
 	}
 
 	~MicroExquis(){
+		if (exquis.connected){
+			exquis.sendExitDevModeMessage();
+			INFO("Exquis disconnected");
+		}
 		if (is_mts_esp_master){
 			MTS_DeregisterMaster();
 			INFO("MTS ESP Master unregistered");
 		}
+
 	}
 
 	void setParams(
@@ -282,7 +292,10 @@ struct MicroExquis : Module {
 			tuningPitchAngleParam = params[TUNING_PITCHANGLE_PARAM].getValue();
 			scaleStepsAParam = params[SCALE_STEPS_A_PARAM].getValue();
 			scaleStepsBParam = params[SCALE_STEPS_B_PARAM].getValue();
-			scaleModeParam = params[SCALE_MODE_PARAM].getValue();		
+			scaleModeParam = params[SCALE_MODE_PARAM].getValue();	
+
+			mtsTuningMode = (MtsTuningMode)params[KEYBOARD_MAPPING_PARAM].getValue();
+			keyLabels = (KeyLabels)params[KEY_LABELS_PARAM].getValue();
 
 			setMTSESPTuning();
 			initialized = true;
@@ -377,26 +390,23 @@ struct MicroExquis : Module {
 		//
 		//}
 
-
+		// check 
 		float dt = timer.process(args.sampleTime);
-		if (dt > 0.25f){
-			
-			timer.reset();
-			cnt +=1;
-
-			if (cnt%10 == 1) {
+		if (exquis.connected){
+			// check if connection is alive every 5 seconds
+			if (dt > 5.f){
+				timer.reset();
 				exquis.checkConnection();
 			}
+		}else{
+			// if disconnected, check for exquis every 2 seconds
+			if (dt > 2.f){
+				timer.reset();
+				exquis.checkConnection();
+				if (exquis.connected){
+					exquis.initialize();
 
-			if (exquis.connected){
-				exquis.sendKeepaliveMessage();
-				if  (write_iterations > 0){
-					exquis.setNoteMidinoteValues();
-					exquis.setNoteColors();
-					write_iterations -= 1;
 				}
-			}else{
-				write_iterations = 5;
 			}
 		}
 
@@ -442,6 +452,7 @@ struct MicroExquis : Module {
 			// Handle Labels selection
 			if (params[KEY_LABELS_SWITCH_PARAM].getValue() < 0.5 && !last_key_param_state_low) {
 				keyLabels = (KeyLabels)((keyLabels + 1) % 3);
+				params[KEY_LABELS_PARAM].setValue((float)keyLabels);
 				last_key_param_state_low = true;
 			}else if (params[KEY_LABELS_SWITCH_PARAM].getValue() > 0.5){
 				last_key_param_state_low = false;
@@ -457,15 +468,16 @@ struct MicroExquis : Module {
 			// Handle Note mapping selection
 			if (params[KEYBOARD_MAPPING_SWITCH_PARAM].getValue() < 0.5 && !last_keyboardmap_param_state_low) {
 				mtsTuningMode = (MtsTuningMode)((mtsTuningMode + 1) % 3);
+				params[KEYBOARD_MAPPING_PARAM].setValue((float)mtsTuningMode);
 				setMTSESPTuning();
 				last_keyboardmap_param_state_low = true;
 			}else if (params[KEYBOARD_MAPPING_SWITCH_PARAM].getValue() > 0.5){
 				last_keyboardmap_param_state_low = false;
 			}
 
-			lights[KEYBOARD_MAPPING_EXQUIS_LIGHT].value = mtsTuningMode == MtsTuningMode::MTS_TUNING_MODE_EXQUIS;
-			lights[KEYBOARD_MAPPING_PIANOALL_LIGHT].value = mtsTuningMode == MtsTuningMode::MTS_TUNING_MODE_PIANO_SCALESEQ_ALL;
-			lights[KEYBOARD_MAPPING_PIANOWHITE_LIGHT].value = mtsTuningMode == MtsTuningMode::MTS_TUNING_MODE_PIANO_SCALESEQ_WHITE;
+			lights[KEYBOARD_MAPPING_EXQUIS_LIGHT].value =     is_mts_esp_master && mtsTuningMode == MtsTuningMode::MTS_TUNING_MODE_EXQUIS;
+			lights[KEYBOARD_MAPPING_PIANOALL_LIGHT].value =   is_mts_esp_master && mtsTuningMode == MtsTuningMode::MTS_TUNING_MODE_PIANO_SCALESEQ_ALL;
+			lights[KEYBOARD_MAPPING_PIANOWHITE_LIGHT].value = is_mts_esp_master && mtsTuningMode == MtsTuningMode::MTS_TUNING_MODE_PIANO_SCALESEQ_WHITE;
 
 
 		}
@@ -619,6 +631,7 @@ struct MicroExquisDisplay: ExquisDisplay {
 			tuningbase_text = module->tuningbase_text;
 			lastnote_name_text = module->exquis.lastNotePlayedNameLabel;
 			lastnote_text = module->exquis.lastNotePlayedLabel;
+			mts_esp_active_text = module->is_mts_esp_master ? "Active" : "Inactive";
 			std::stringstream ss;
 			ss << std::fixed 
 				<< std::setprecision(2) 

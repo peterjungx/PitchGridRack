@@ -24,6 +24,9 @@ struct ExquisDisplay : Widget {
 	std::string lastnote_name_text = "";
 	std::string lastnote_text = "";
 
+	std::string mts_esp_label = "MTS-ESP";
+	std::string mts_esp_active_text = "Inactive";
+
 	float fontSize;
 	float textOffsetY;
 	NVGcolor bgColor = nvgRGB(0x19, 0x19, 0x19);
@@ -83,6 +86,9 @@ struct ExquisDisplay : Widget {
 			nvgText(args.vg, labelPos1.x, labelPos1.y + 5.4*textOffsetY, tuningbase_label.c_str(), NULL);
 			nvgText(args.vg, labelPos1.x, labelPos1.y + 7.1*textOffsetY, lastnote_label.c_str(), NULL);
 
+			nvgText(args.vg, labelPos1.x, labelPos1.y + 8.8*textOffsetY, mts_esp_label.c_str(), NULL);
+
+
 			nvgFillColor(args.vg, textColor);
 
 			nvgText(args.vg, labelPos1.x + 4, labelPos1.y + 2.7*textOffsetY , tuningvector1_fr_text.c_str(), NULL);
@@ -96,6 +102,9 @@ struct ExquisDisplay : Widget {
 			nvgText(args.vg, box.size.x - labelPos1.x, labelPos1.y + 2*textOffsetY, tuningvector1_coord_text.c_str(), NULL);
 			nvgText(args.vg, box.size.x - labelPos1.x, labelPos1.y + 3.7*textOffsetY, tuningvector2_coord_text.c_str(), NULL);
 			nvgText(args.vg, box.size.x - labelPos1.x, labelPos1.y + 7.1*textOffsetY, lastnote_name_text.c_str(), NULL);
+
+			// MTS-ESP
+			nvgText(args.vg, box.size.x - labelPos1.x, labelPos1.y + 8.8*textOffsetY, mts_esp_active_text.c_str(), NULL);
 
 		}
 		Widget::drawLayer(args, layer);

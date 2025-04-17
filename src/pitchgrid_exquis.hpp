@@ -138,6 +138,17 @@ struct PitchGridExquis: Exquis {
 		showAllOctavesLayer();
 	}
 
+	void initialize(){
+		sendEnterDevModeMessage();
+		setNoteMidinoteValues();
+		setNoteColors();
+		resetTuningButton();
+		resetArrangeButton();
+		resetScaleSelectionButton();
+		resetOctaveUpButton();
+		resetOctaveDownButton();
+	}	
+
 	void showAllOctavesLayer(){
 		if (!tuning){
 			return;
@@ -250,6 +261,7 @@ struct PitchGridExquis: Exquis {
 					}
 					if (scaleSystem == scaleMapper.scale.scale_system){
 						selectedScaleNote.startWithNote(&note);
+						// display needs update
 					}
 				}else{
 					note.color = XQ_COLOR_BLACK;
@@ -281,11 +293,13 @@ struct PitchGridExquis: Exquis {
 		tuningConstantNoteSelected = false;
 		tuningConstantNote.stop();
 		tuningRetuneNote.stop();
+		resetTuningButton();
 	}
 
 	void enterTuningIntervalSelectionMode(){
 		stopTuningMode();
 		showSingleOctaveLayer();
+		activateTuningButton();
 		tuningIntervalSelectionModeOn = true;
 	}
 	void exitTuningIntervalSelectionMode(){
@@ -304,31 +318,69 @@ struct PitchGridExquis: Exquis {
 					}
 					if (note != NULL){
 						tuningConstantNote.startWithNote(note);
+						needsNoteDisplayUpdate=true;
 					}
 				}
 			}
 		}
 		showMainLayer();
+		resetTuningButton();
 		tuningIntervalSelectionModeOn = false;
 	}
 	void enterArrangeMode(){
 		stopTuningMode();
 		showSingleOctaveLayer();
+		activateArrangeButton();
 		arrangeModeOn = true;
 	}
 	void exitArrangeMode(){
 		showMainLayer();
+		resetArrangeButton();
 		arrangeModeOn = false;
 	}
 	void enterScaleSelectMode(){
 		stopTuningMode();
 		showScaleSystemSelectLayer();
+		activateScaleSelectionButton();
 		scaleSelectModeOn = true;
 	}
 	void exitScaleSelectMode(){
 		showMainLayer();
 		selectedScaleNote.stop();
+		resetScaleSelectionButton();
 		scaleSelectModeOn = false;
+	}
+
+
+	void activateTuningButton(){
+		sendSetColorMessage(101, XQ_COLOR_EXQUIS_BLUE);
+	}
+	void resetTuningButton(){
+		sendSetColorMessage(101, XQ_COLOR_EXQUIS_YELLOW_DIMMED);
+	}
+	void activateArrangeButton(){
+		sendSetColorMessage(103, XQ_COLOR_EXQUIS_BLUE);
+	}
+	void resetArrangeButton(){
+		sendSetColorMessage(103, XQ_COLOR_EXQUIS_YELLOW_DIMMED);
+	}
+	void activateScaleSelectionButton(){
+		sendSetColorMessage(104, XQ_COLOR_EXQUIS_BLUE);
+	}
+	void resetScaleSelectionButton(){
+		sendSetColorMessage(104, XQ_COLOR_EXQUIS_YELLOW_DIMMED);
+	}
+	void activateOctaveDownButton(){
+		sendSetColorMessage(106, XQ_COLOR_EXQUIS_BLUE);
+	}
+	void resetOctaveDownButton(){
+		sendSetColorMessage(106, XQ_COLOR_EXQUIS_YELLOW_DIMMED);
+	}
+	void activateOctaveUpButton(){
+		sendSetColorMessage(107, XQ_COLOR_EXQUIS_BLUE);
+	}
+	void resetOctaveUpButton(){
+		sendSetColorMessage(107, XQ_COLOR_EXQUIS_YELLOW_DIMMED);
 	}
 
 
@@ -410,159 +462,162 @@ struct PitchGridExquis: Exquis {
 
 
 	void processMidiMessage(midi::Message msg) override {
-		// control sysex messages 
-		if (msg.bytes.size() == 8 && msg.bytes[0] == 0xf0 && msg.bytes[1] == 0x00 && msg.bytes[2] == 0x21 && msg.bytes[3] == 0x7e && msg.bytes[7] == 0xf7) {
-			uint8_t messageType = msg.bytes[4];
-			uint8_t controllerId = msg.bytes[5];
-			uint8_t value = msg.bytes[6];
-			switch (messageType){
-				case 0x08: // button press/release
-					switch (controllerId){
-						case 1: // tuning button
-							if (value == 1){
-								enterTuningIntervalSelectionMode();
-							}else{
-								exitTuningIntervalSelectionMode();
-							}
-							break;
-						case 3: // arrange button
-							if (value == 1){
-								enterArrangeMode();
-							}else{
-								exitArrangeMode();
-							}
-							break;
-						case 4: // scale select button
-							if (value == 1){
-								enterScaleSelectMode();
-							}else{
-								exitScaleSelectMode();
-							}
-							break;
-						case 6: // octave down
-							if (value == 1){
-								// apply offset equal to octave to tuning
-								float octave_freq_ratio = tuning->vecToFreqRatioNoOffset(scaleMapper.scale.scale_system);
-								float new_offset = tuning->Offset() - log2(octave_freq_ratio);
-								tuning->setOffset(new_offset);
-								needsRetune = true;
-							}
-							break;
-						case 7: // octave up
-							if (value == 1){
-								// apply offset equal to octave to tuning
-								float octave_freq_ratio = tuning->vecToFreqRatioNoOffset(scaleMapper.scale.scale_system);
-								float new_offset = tuning->Offset() + log2(octave_freq_ratio);
-								tuning->setOffset(new_offset);
-								needsRetune = true;
-							}
-							break;
-						case 10: // controller 1 press
-							if (arrangeModeOn){
-								if (value == 1){
-									scaleMapper.flipHorizontally();
-									showSingleOctaveLayer();
-									needsRetune = true;
-								}
-							} else if (tuningModeOn){
-								if (value == 1){
-									justifyTuning();
-								}
-							}							
-							break;
-						case 11: // controller 2 press
-							if (arrangeModeOn){
-								if (value == 1){
-									scaleMapper.flipVertically();
-									showSingleOctaveLayer();
-									needsRetune = true;
-								}
-							} else if (tuningModeOn){
-								if (value == 1){
-									setTuning();
-								}
-							}							
-							break;
-						case 12: // controller 3 press
-							// change color scheme
-							if (!scaleSelectModeOn){
-								if (value == 1){
-									colorScheme = (ColorScheme)((colorScheme + 1) % NUM_COLORSCHEMES);
-									updateKeyDisplay();
-								}
-							}
-							break;
-						case 13: // controller 4 press
+		// react to cc messages on channel 16 (0xbf)
+		if (msg.bytes.size() == 3 && msg.bytes[0] == 0xbf) {
+			uint8_t controllerId = msg.bytes[1];
+			uint8_t value = msg.bytes[2];
+			
+			switch (controllerId){
+				// button press/release
 
-							break;
+
+				case 0x65: // tuning button
+					if (value == 0x7F){
+						enterTuningIntervalSelectionMode();
+					}else{
+						exitTuningIntervalSelectionMode();
 					}
 					break;
-				case 0x0a: // rotary decrement
-					switch(controllerId){
-						case 0:
-							if (arrangeModeOn){
-								//scaleMapper.shiftY(-1);
-								scaleMapper.rotatePlus60();
-								showSingleOctaveLayer();
-								needsRetune = true;
-							}else if (tuningModeOn){
-								retuneIntervalByAmount(-10.0*value);
-							}
-							break;
-						case 1:
-							if (arrangeModeOn){
-								//scaleMapper.shiftX(1);
-								scaleMapper.skewY(-1);
-								showSingleOctaveLayer();
-								needsRetune = true;
-							}else if (tuningModeOn){
-								retuneIntervalByAmount(-0.1*value);
-							}
-							break;
-						case 2:
-							break;
-						case 3:
-							if (!scaleSelectModeOn){
-								scaleMapper.scale.mode = scaleMapper.scale.mode >0 ? scaleMapper.scale.mode - 1 : 0;
-								updateKeyDisplay();
-								needsRetune = true;
-							}
-							break;
+				case 0x67: // arrange button
+					if (value == 0x7F){
+						enterArrangeMode();
+					}else{
+						exitArrangeMode();
 					}
 					break;
-				case 0x0b: // rotary increment
-					switch(controllerId){
-						case 0:
-							if (arrangeModeOn){
-								//scaleMapper.shiftY(1);
-								scaleMapper.rotateMinus60();
-								showSingleOctaveLayer();
-								needsRetune = true;
-							}else if (tuningModeOn){
-								retuneIntervalByAmount(10.0*value);
-							}
-							break;
-						case 1:
-							if (arrangeModeOn){
-								//scaleMapper.shiftX(-1);
-								scaleMapper.skewY(1);
-								showSingleOctaveLayer();
-								needsRetune = true;
-							}else if (tuningModeOn){
-								retuneIntervalByAmount(0.1*value);
-							}
-							break;
-						case 2:
-							break;
-						case 3:
-							if (!scaleSelectModeOn){
-								scaleMapper.scale.mode = scaleMapper.scale.mode < scaleMapper.scale.n-1 ? scaleMapper.scale.mode + 1 : scaleMapper.scale.n-1;
-								updateKeyDisplay();
-								needsRetune = true;
-							}
-							break;
+				case 0x68: // scale select button
+					if (value == 0x7F){
+						enterScaleSelectMode();
+					}else{
+						exitScaleSelectMode();
 					}
 					break;
+				case 0x6A: // octave down
+					if (value == 0x7F){
+						// apply offset equal to octave to tuning
+						float octave_freq_ratio = tuning->vecToFreqRatioNoOffset(scaleMapper.scale.scale_system);
+						float new_offset = tuning->Offset() - log2(octave_freq_ratio);
+						tuning->setOffset(new_offset);
+						activateOctaveDownButton();
+						needsRetune = true;
+					}else{
+						resetOctaveDownButton();
+					}
+					break;
+				case 0x6B: // octave up
+					if (value == 0x7F){
+						// apply offset equal to octave to tuning
+						float octave_freq_ratio = tuning->vecToFreqRatioNoOffset(scaleMapper.scale.scale_system);
+						float new_offset = tuning->Offset() + log2(octave_freq_ratio);
+						tuning->setOffset(new_offset);
+						activateOctaveUpButton();
+						needsRetune = true;
+					}else{
+						resetOctaveUpButton();
+					}
+					break;
+				case 0x72: // controller 1 press
+					if (arrangeModeOn){
+						if (value == 0x7F){
+							scaleMapper.flipHorizontally();
+							showSingleOctaveLayer();
+							needsRetune = true;
+						}
+					} else if (tuningModeOn){
+						if (value == 0x7F){
+							justifyTuning();
+						}
+					}							
+					break;
+				case 0x73: // controller 2 press
+					if (arrangeModeOn){
+						if (value == 0x7F){
+							scaleMapper.flipVertically();
+							showSingleOctaveLayer();
+							needsRetune = true;
+						}
+					} else if (tuningModeOn){
+						if (value == 0x7F){
+							setTuning();
+						}
+					}							
+					break;
+				case 0x74: // controller 3 press
+					// change color scheme
+					if (!scaleSelectModeOn){
+						if (value == 0x7F){
+							colorScheme = (ColorScheme)((colorScheme + 1) % NUM_COLORSCHEMES);
+							updateKeyDisplay();
+						}
+					}
+					break;
+				case 0x75: // controller 4 press
+
+					break;
+
+
+				case 0x6E: // knob 1
+					if (value < 0x40){
+						// decrement
+						if (arrangeModeOn){
+							//scaleMapper.shiftY(-1);
+							scaleMapper.rotatePlus60();
+							showSingleOctaveLayer();
+							needsRetune = true;
+						}else if (tuningModeOn){
+							retuneIntervalByAmount(-10.0*value/127);
+						}
+					}else{
+						// increment
+						if (arrangeModeOn){
+							//scaleMapper.shiftY(1);
+							scaleMapper.rotateMinus60();
+							showSingleOctaveLayer();
+							needsRetune = true;
+						}else if (tuningModeOn){
+							retuneIntervalByAmount(10.0*value/127);
+						}
+					}
+					break;
+				case 0x6F: // knob 2
+					if (value < 0x40){
+						if (arrangeModeOn){
+							//scaleMapper.shiftX(1);
+							scaleMapper.skewY(-1);
+							showSingleOctaveLayer();
+							needsRetune = true;
+						}else if (tuningModeOn){
+							retuneIntervalByAmount(-0.1*value/127);
+						}
+					}else{
+						if (arrangeModeOn){
+							//scaleMapper.shiftX(-1);
+							scaleMapper.skewY(1);
+							showSingleOctaveLayer();
+							needsRetune = true;
+						}else if (tuningModeOn){
+							retuneIntervalByAmount(0.1*value/127);
+						}
+					}
+					break;
+				case 0x70: // knob 3
+					break;
+				case 0x71: // knob 4
+					if (value < 0x40){
+						if (!scaleSelectModeOn){
+							scaleMapper.scale.mode = scaleMapper.scale.mode >0 ? scaleMapper.scale.mode - 1 : 0;
+							updateKeyDisplay();
+							needsRetune = true;
+						}
+					}else{
+						if (!scaleSelectModeOn){
+							scaleMapper.scale.mode = scaleMapper.scale.mode < scaleMapper.scale.n-1 ? scaleMapper.scale.mode + 1 : scaleMapper.scale.n-1;
+							updateKeyDisplay();
+							needsRetune = true;
+						}
+					}
+					break;
+
 				default:
 					break;
 			}
@@ -581,6 +636,7 @@ struct PitchGridExquis: Exquis {
 					tuningConstantNote.stop();
 					tuningModeRetuneInterval = selectedInterval;
 					tuningRetuneNote.startWithNote(note);
+					needsNoteDisplayUpdate=true;
 					tuningModeOn = true;
 				} else if (note->scaleSeqNr>=0 && selectedInterval.x >= 0 && selectedInterval.y >= 0 && selectedInterval.x <= scaleMapper.scale.scale_system.x && selectedInterval.y <= scaleMapper.scale.scale_system.y){
 					if (tuningConstantNoteSelected){
@@ -606,8 +662,10 @@ struct PitchGridExquis: Exquis {
 						tuningConstantNote.stop();
 						tuningModeRetuneInterval = selectedInterval;
 						tuningRetuneNote.startWithNote(note);
+						
 						tuningModeOn = true;
 					}
+					needsNoteDisplayUpdate=true;
 				} // otherwise ignore
 			}
 		} else if (scaleSelectModeOn){
@@ -622,6 +680,7 @@ struct PitchGridExquis: Exquis {
 				if (scaleSystem.x > 0 && scaleSystem.y > 0 && scaleMapper.scale.isCoprimeScaleVector(scaleSystem)){
 					scaleMapper.scale.setScaleSystem(scaleSystem);
 					selectedScaleNote.startWithNote(note);
+					needsNoteDisplayUpdate=true;
 					needsRetune = true;
 				}
 				showScaleSystemSelectLayer();
