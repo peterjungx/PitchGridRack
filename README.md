@@ -26,6 +26,8 @@ To make my theoretical explorations audible and playable for the practicing musi
 
 The PitchGrid Microtonal Exquis (or MicroExquis for short) is a module in the VCV Rack PitchGrid plugin. Its purpose is to provide a means to explore different tunings, scales and hexagonal keyboard layouts via the [Exquis MPE controller by Intuitive Instruments](https://dualo.com/exquis/?utm_source=VCVplugin).
 
+
+- Supported FW Version: 2.1.3
 - Acts as MTS-ESP Master
 - Scale and scale mode selection (all MOSes and more)
 - Consistent Tuning of Scales

@@ -26,7 +26,6 @@ to explore
 using simd::float_4;
 using simd::int32_4;
 
-
 struct MicroExquis : Module {
 	enum ParamIds {
 		TUNING_OCTAVE_PARAM,
@@ -189,6 +188,16 @@ struct MicroExquis : Module {
 			}
 		}
 
+		exquis.checkConnection();
+		if (exquis.connected){
+			INFO("Exquis connected. Initializing...");
+			exquis.initialize();
+			INFO("Exquis initialized.");
+		}
+		else{
+			INFO("Exquis not found.");
+		}
+
 	}
 
 	~MicroExquis(){
@@ -261,7 +270,7 @@ struct MicroExquis : Module {
 					// MIDI middle C = note number 60 = 261.6255653 Hz (= 440 * pow(2, -9/12)) 
 					ScaleVector v = exquis.scaleMapper.scale.scaleNoteSeqNrToCoord(i-60);
 					freqs[i] = 261.6255653f * tuning.vecToFreqRatio(v);
-					INFO("tune %d -> %d;%d -> %f", i, v.x, v.y, freqs[i]);
+					//INFO("tune %d -> %d;%d -> %f", i, v.x, v.y, freqs[i]);
 				}
 			} else { //if (mtsTuningMode==MTS_TUNING_MODE_PIANO_SCALESEQ_WHITE){
 				// MIDI next white key = scale note sequence number +1
@@ -303,6 +312,7 @@ struct MicroExquis : Module {
 		
 
 		if (badlyImplementedValueUpdateDividerTODOMakeProperly.process()){
+
 			//params[TUNING_OCTAVE_PARAM].setValue(tuning.vecToFreqRatioNoOffset(exquis.scaleMapper.scale.scale_system));
 			//params[TUNING_PITCHANGLE_PARAM].setValue(tuning.vecToFreqRatioNoOffset({1,0}));
 			//params[SCALE_MODE_PARAM].setValue((float)exquis.scaleMapper.scale.mode/exquis.scaleMapper.scale.n);

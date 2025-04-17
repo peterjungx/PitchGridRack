@@ -6,9 +6,9 @@ Plugin* pluginInstance;
 void init(Plugin* p) {
 	pluginInstance = p;
 
-	p->addModel(modelMicroHammond);
 	p->addModel(modelMicroVOctMapper);
 	p->addModel(modelMicroExquis);
+	p->addModel(modelMicroHammond);
 
 }
 

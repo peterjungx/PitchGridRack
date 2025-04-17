@@ -158,7 +158,7 @@ struct ExquisBreathingNote {
             if (phase > 1.f){
                 phase -= 1.f;
             }
-            float brightness = fabs(2.f * phase - 1.f);
+            //float brightness = fabs(2.f * phase - 1.f);
             //note->sendSetColorMessage(midi_output, note->color * brightness);
 			
             
@@ -302,15 +302,21 @@ struct Exquis {
 	}
 
 	void checkConnection(){
+		//INFO("Checking MIDI -> Exquis connection...");
 		for (int driver_id : midi::getDriverIds()){
 			midi::Driver* driver = midi::getDriver(driver_id);
 			for (int device_id : driver->getOutputDeviceIds()){
+				// print device name
+				//INFO("Output device: %s", driver->getOutputDeviceName(device_id).c_str());
 				if (driver->getOutputDeviceName(device_id).rfind( "Exquis", 0)==0){
 					midi_output.setDriverId(driver_id);
 					midi_output.setDeviceId(device_id);
+					continue;
 				}
 			}
 			for (int device_id : driver->getInputDeviceIds()){
+				// print device name
+				//INFO("Input device: %s", driver->getInputDeviceName(device_id).c_str());
 				if (driver->getInputDeviceName(device_id).rfind( "Exquis", 0)==0){
 					midi_input.setDriverId(driver_id);
 					midi_input.setDeviceId(device_id);

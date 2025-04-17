@@ -6,9 +6,9 @@ using namespace rack;
 
 extern Plugin* pluginInstance;
 
+extern Model* modelMicroExquis;
 extern Model* modelMicroHammond;
 extern Model* modelMicroVOctMapper;
-extern Model* modelMicroExquis;
 
 struct DigitalDisplay : Widget {
 	std::string fontPath;

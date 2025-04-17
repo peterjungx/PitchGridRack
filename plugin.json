@@ -27,6 +27,16 @@
       ]
     },
     {
+      "slug": "MicroVOctMapper",
+      "name": "Microtonal VOCT Mapper",
+      "description": "Microtonally maps V/OCT to MV/OCT",
+      "manualUrl": "https://github.com/peterjungx/PitchGridRack",
+      "tags": [
+        "Tuner",
+        "Polyphonic"
+      ]
+    },
+    {
       "slug": "MicroHammond",
       "name": "Microtonal Hammond",
       "description": "Microtonally adjusted Hammond frequencies",
@@ -34,18 +44,6 @@
       "tags": [
         "VCO",
         "Tuner",
-        "Polyphonic"
-      ]
-    },
-    {
-      "slug": "MicroVOctMapper",
-      "name": "Microtonal V/OCT Mapper",
-      "description": "Microtonally map V/OCT to MV/OCT",
-      "manualUrl": "https://github.com/peterjungx/PitchGridRack",
-      "tags": [
-        "Quantizer",
-        "Tuner",
-        "Utility",
         "Polyphonic"
       ]
     }
